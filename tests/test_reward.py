@@ -241,18 +241,46 @@ def test_reward_mercor_whitespace_padding_does_not_inflate():
 def test_reward_mercor_cap_via_log_scale():
     """
     The log scale ensures diminishing returns — a 10 000-char string should
-    not score more than the documented cap (~0.9 ≈ 0.3 * 3.0).
+    not score more than the documented cap (~1.8 ≈ 0.3 * 6.0).
+    The gradient exists up to ~402 chars (e^6 - 1); beyond that it is flat.
     """
     massive = "X" * 10_000
     result = reward_mercor(massive, action_was_correct=True)
-    assert result <= 0.9 + 1e-9, f"Expected cap ~0.9, got {result}"
+    assert result <= 1.8 + 1e-9, f"Expected cap ~1.8, got {result}"
 
 
 def test_reward_mercor_single_char():
     """A one-character reasoning should give a small but positive reward."""
     result = reward_mercor("A", action_was_correct=True)
-    expected = 0.3 * min(math.log(2), 3.0)
+    expected = 0.3 * min(math.log(2), 6.0)
     assert result == pytest.approx(expected)
+
+
+def test_reward_mercor_gradient_exists_at_100_chars():
+    """
+    With cap=6.0, the gradient is non-zero well beyond 19 characters.
+    A 100-char reasoning string must score strictly less than a 400-char one.
+    """
+    short_reasoning = "S" * 100
+    long_reasoning = "L" * 400
+    r_short = reward_mercor(short_reasoning, action_was_correct=True)
+    r_long = reward_mercor(long_reasoning, action_was_correct=True)
+    assert r_short < r_long, (
+        f"Expected gradient to exist between 100 and 400 chars; "
+        f"got r_short={r_short:.4f}, r_long={r_long:.4f}"
+    )
+
+
+def test_reward_mercor_at_cap_boundary():
+    """
+    A string of exactly ~402 chars (e^6 - 1 ≈ 402) should be at or very near
+    the cap of 1.8.  Any longer string must not exceed 1.8.
+    """
+    at_cap = "A" * 402
+    result = reward_mercor(at_cap, action_was_correct=True)
+    assert result <= 1.8 + 1e-9
+    # And it should be close to the cap (within 5 % of 1.8)
+    assert result >= 1.8 * 0.95, f"Expected result near cap 1.8, got {result:.4f}"
 
 
 # ---------------------------------------------------------------------------

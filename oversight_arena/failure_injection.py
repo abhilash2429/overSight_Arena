@@ -226,33 +226,47 @@ class FailureInjector:
     # Public query interface used by the environment each step
     # ------------------------------------------------------------------
 
-    def should_inject(self, worker_id: int, current_step: int) -> FailureMode:
+    def should_inject(self, worker_id: int, steps_in_state: int) -> FailureMode:
         """
         Return the ``FailureMode`` that should be activated for *worker_id*
-        at *current_step*, or ``FailureMode.NONE`` if no injection applies.
+        once it has spent *steps_in_state* steps in its current WORKING state,
+        or ``FailureMode.NONE`` if no injection applies yet.
 
-        The failure triggers on the **exact** configured step.  The environment
-        is responsible for latching the resulting worker state; this method is
-        purely advisory and is safe to call multiple times.
+        Coordinate system
+        -----------------
+        ``inject_at_step`` in the plan is always a **steps-in-WORKING** threshold
+        (e.g. 2 for Easy, drawn from {1, 2} for Medium/Hard).  It is **not** a
+        global episode step counter.  This method therefore accepts
+        ``steps_in_state`` (the worker's own counter) so that the two values are
+        compared in the same coordinate system.
+
+        The actual injection is performed inside ``WorkerAgent._advance_working()``
+        which compares ``self.steps_in_state >= self.inject_at_step`` — this
+        method mirrors that logic and is provided for external querying only.
+        It is *not* called by the environment; it is safe to call any number of
+        times without side-effects.
 
         Parameters
         ----------
         worker_id : int
             The worker being queried (1-5).
-        current_step : int
-            The current environment step counter.
+        steps_in_state : int
+            The number of steps the worker has already spent in WORKING state.
+            Matches ``WorkerAgent.steps_in_state``.
 
         Returns
         -------
         FailureMode
-            The mode to inject, or ``FailureMode.NONE``.
+            The mode to inject (same semantics as ``WorkerAgent.failure_mode``),
+            or ``FailureMode.NONE`` if the threshold has not been reached.
         """
         entry: PlanEntry | None = self.plan.get(worker_id)
         if entry is None:
             # This worker is not in the failure plan — always clean.
             return FailureMode.NONE
 
-        if current_step == entry["inject_at_step"]:
+        # Use >= to match WorkerAgent._advance_working() exactly.
+        if steps_in_state >= entry["inject_at_step"]:
             return entry["failure_mode"]  # type: ignore[return-value]
 
         return FailureMode.NONE

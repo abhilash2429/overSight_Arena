@@ -174,9 +174,12 @@ def reward_mercor(reasoning_text: str, action_was_correct: bool) -> float:
     Anti-gaming rules enforced here:
       1. Whitespace padding is stripped before counting characters.
       2. Reward is capped via a log scale so padding with filler text yields
-         diminishing returns:  +0.3 * min(log(char_count + 1), 3.0)
-      3. Maximum achievable per step ≈ +0.9  (when log(char_count+1) == 3.0,
-         i.e. char_count ≈ 19, easily reached by a single clear sentence).
+         diminishing returns:  +0.3 * min(log(char_count + 1), 6.0)
+      3. Maximum achievable per step ≈ +1.8  (when log(char_count+1) == 6.0,
+         i.e. char_count ≈ 402 chars — roughly 2-4 clear reasoning sentences).
+         The gradient is non-zero from 1 character all the way to ~400, giving
+         the training signal room to incentivise genuine chain-of-thought rather
+         than just rewarding any non-empty reasoning string.
       4. If action_was_correct is False the bonus is hard-zeroed regardless of
          how long the reasoning is -- this prevents reward hacking by writing
          elaborate justifications for wrong decisions.
@@ -188,13 +191,13 @@ def reward_mercor(reasoning_text: str, action_was_correct: bool) -> float:
                             this step.
 
     Returns:
-        Float in [0.0, ~0.9].
+        Float in [0.0, ~1.8].
     """
     if not action_was_correct:
         return 0.0
     stripped = reasoning_text.strip()
     char_count = len(stripped)
-    return 0.3 * min(math.log(char_count + 1), 3.0)
+    return 0.3 * min(math.log(char_count + 1), 6.0)
 
 
 # ---------------------------------------------------------------------------

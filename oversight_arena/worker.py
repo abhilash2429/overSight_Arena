@@ -141,6 +141,13 @@ class WorkerAgent:
         self.colluding_partner_id: int | None = None
         self.redirected: bool = False  # True if REDIRECT was applied this step
 
+        # Global env step at which this worker was activated (via activate() or
+        # mark_corrupted()).  Used by the environment to compute the correct
+        # propagation_step for reward_correct_catch: when the supervisor
+        # TERMINATEs failing worker W_n, prop_step = W_{n+1}.activation_step.
+        # -1 means "not yet activated".
+        self.activation_step: int = -1
+
         # Private: survives apply_terminate() so that previously-corrupted
         # workers always re-corrupt after _RECORRUPT_AFTER WORKING steps.
         self._was_corrupted: bool = False
@@ -153,6 +160,15 @@ class WorkerAgent:
         """
         Register the failure mode and the WORKING-step index at which it fires.
         Called by the FailureInjector before the episode begins.
+
+        Coordinate system note
+        ----------------------
+        ``inject_at_step`` is a **steps_in_state** threshold, not a global env
+        step.  It is compared against ``self.steps_in_state`` inside
+        ``_advance_working()``.  The FailureInjector stores the same
+        steps_in_state values in its plan dict (e.g. Easy always = 2,
+        Medium/Hard drawn from {1, 2}).  No coordinate conversion is needed
+        when copying from the injector plan to the worker.
         """
         self.failure_mode = failure_mode
         self.inject_at_step = inject_at_step
@@ -267,7 +283,7 @@ class WorkerAgent:
     # Activation
     # ------------------------------------------------------------------
 
-    def activate(self, upstream_output: str) -> None:
+    def activate(self, upstream_output: str, activation_step: int = 0) -> None:
         """
         Transition IDLE → WORKING.
 
@@ -275,11 +291,24 @@ class WorkerAgent:
         APPROVED.  ``upstream_output`` is the approved string that seeds this
         worker's context; it is logged to output_history for provenance but does
         not influence which scripted output variant the worker will produce.
+
+        Parameters
+        ----------
+        upstream_output : str
+            The approved output string from the immediately upstream worker.
+        activation_step : int
+            The global environment step at which this activation occurs.
+            Stored as ``self.activation_step`` so the environment can use it
+            to compute ``propagation_step`` for ``reward_correct_catch``:
+            when TERMINATEing failing worker W_n, the environment reads
+            ``W_{n+1}.activation_step`` to determine whether the downstream
+            was already consuming bad output at the time of the catch.
         """
         if self.state != WorkerState.IDLE:
             # Safety guard: already active; silently ignore duplicate calls.
             return
 
+        self.activation_step = activation_step
         self._transition(WorkerState.WORKING)
         self._current_output = ""
 
@@ -452,7 +481,7 @@ class WorkerAgent:
         self.approved_output = self._current_output
         return self.approved_output
 
-    def mark_corrupted(self) -> None:
+    def mark_corrupted(self, activation_step: int = 0) -> None:
         """
         Force this worker into CORRUPTED state.
 
@@ -464,7 +493,16 @@ class WorkerAgent:
 
         Eagerly appends to output_history so DEEP_INSPECT immediately captures
         the corruption event.
+
+        Parameters
+        ----------
+        activation_step : int
+            The global environment step at which corruption is applied.
+            Stored as ``self.activation_step`` for the same propagation_step
+            computation used by ``activate()`` — a CORRUPTED worker counts
+            as "activated" at the step its upstream hallucinator was approved.
         """
+        self.activation_step = activation_step
         self._was_corrupted = True
         self._transition(WorkerState.CORRUPTED)
         self._current_output = self.task.corrupted_output

@@ -170,7 +170,3 @@ The environment is fully open-source, hosted on Hugging Face Spaces, and designe
 If you work on AI oversight, multi-agent evaluation, or scalable supervision, we'd love your contributions. The failures worth training for are the ones that don't look like failures.
 
 **Live environment:** [https://huggingface.co/spaces/abhilash2429/oversight-arena](https://huggingface.co/spaces/abhilash2429/oversight-arena)
-
----
-
-*Oversight Arena is open-source. Contributions, issue reports, and training run results are all welcome.*
