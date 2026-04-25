@@ -45,9 +45,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import random
 import re
+import shutil
 import statistics
+import subprocess
 import time
 from collections import Counter
 from dataclasses import dataclass, field
@@ -68,6 +71,21 @@ _VERB_RE = re.compile(r"<action>\s*([A-Z_]+)", re.IGNORECASE)
 def _parse_verb(action_text: str) -> str:
     m = _VERB_RE.search(action_text or "")
     return m.group(1).upper() if m else "MALFORMED"
+
+
+def _has_cached_hf_file(model_name: str, filename: str) -> bool:
+    """Best-effort check used to avoid slow Hub HEAD retries for cached models."""
+    try:
+        from huggingface_hub import try_to_load_from_cache  # type: ignore[import-not-found]
+        from huggingface_hub.utils import _CACHED_NO_EXIST  # type: ignore[import-not-found]
+    except Exception:
+        return False
+
+    try:
+        cached = try_to_load_from_cache(model_name, filename)
+    except Exception:
+        return False
+    return bool(cached and cached is not _CACHED_NO_EXIST)
 
 
 class Agent:
@@ -214,6 +232,8 @@ class HFAgent(Agent):
         max_new_tokens: int = 200,
         temperature: float = 0.7,
         dtype: str | None = None,
+        load_in_4bit: bool = False,
+        local_files_only: bool = False,
     ) -> None:
         from transformers import (  # type: ignore[import-not-found]
             AutoModelForCausalLM,
@@ -221,8 +241,56 @@ class HFAgent(Agent):
         )
         import torch  # type: ignore[import-not-found]
 
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         cuda_available = torch.cuda.is_available()
+        device_lower = device.lower()
+        requested_cuda = device_lower == "cuda" or device_lower.startswith("cuda:")
+
+        if requested_cuda and not cuda_available:
+            raise SystemExit(
+                "[hf-agent] --device "
+                f"{device!r} was requested, but torch.cuda.is_available() is false. "
+                "Install a CUDA-enabled PyTorch build / driver stack, or rerun with "
+                "--device cpu and without --load-in-4bit."
+            )
+        if load_in_4bit and (not cuda_available or device_lower == "cpu"):
+            raise SystemExit(
+                "[hf-agent] --load-in-4bit requires a CUDA device with a working "
+                "bitsandbytes installation. Rerun on CUDA, or remove --load-in-4bit."
+            )
+
+        if requested_cuda:
+            requested_index = 0
+            if ":" in device_lower:
+                try:
+                    requested_index = int(device_lower.split(":", 1)[1])
+                except ValueError as exc:
+                    raise SystemExit(
+                        f"[hf-agent] Invalid CUDA device {device!r}; expected cuda or cuda:N."
+                    ) from exc
+            if requested_index >= torch.cuda.device_count():
+                raise SystemExit(
+                    "[hf-agent] --device "
+                    f"{device!r} was requested, but only "
+                    f"{torch.cuda.device_count()} CUDA device(s) are visible."
+                )
+            try:
+                probe = torch.empty(1, device=device)
+                del probe
+            except Exception as exc:
+                raise SystemExit(
+                    "[hf-agent] --device "
+                    f"{device!r} was requested, but PyTorch cannot allocate on it: "
+                    f"{exc}. Install a CUDA-enabled PyTorch build / driver stack, "
+                    "or rerun with --device cpu and without --load-in-4bit."
+                ) from exc
+
+        use_local_files = local_files_only or _has_cached_hf_file(
+            model_name, "config.json"
+        )
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            model_name,
+            local_files_only=use_local_files,
+        )
 
         # Prefer CUDA for HF rollouts. Without an explicit dtype, transformers
         # may load a 3B model in fp32 and either stay CPU-bound or heavily
@@ -237,9 +305,17 @@ class HFAgent(Agent):
             kw["device_map"] = "cpu"
         else:
             kw["device_map"] = {"": device}
+        if load_in_4bit:
+            from transformers import BitsAndBytesConfig  # type: ignore[import-not-found]
+
+            kw["quantization_config"] = BitsAndBytesConfig(load_in_4bit=True)
         if dtype is not None:
             kw["torch_dtype"] = getattr(torch, dtype)
-        self.model = AutoModelForCausalLM.from_pretrained(model_name, **kw)
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            local_files_only=use_local_files,
+            **kw,
+        )
         self.model.eval()
         self.max_new_tokens = max_new_tokens
         self.temperature = temperature
@@ -250,6 +326,8 @@ class HFAgent(Agent):
             "[hf-agent] "
             f"cuda_available={cuda_available} "
             f"device_arg={device!r} dtype={dtype or 'model-default'} "
+            f"load_in_4bit={load_in_4bit} "
+            f"local_files_only={use_local_files} "
             f"input_device={self._input_device} "
             f"device_map={device_map or getattr(self.model, 'device', 'unknown')}"
         )
@@ -474,6 +552,74 @@ def print_table(summary: dict[str, DifficultySummary]) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _preflight_hf_args(args: argparse.Namespace) -> None:
+    """Reject impossible HF device settings before importing transformers."""
+    device = str(args.device)
+    device_lower = device.lower()
+    requested_cuda = device_lower == "cuda" or device_lower.startswith("cuda:")
+    if not (requested_cuda or args.load_in_4bit):
+        return
+
+    if requested_cuda and os.name == "nt" and shutil.which("nvidia-smi") is None:
+        raise SystemExit(
+            "[hf-agent] --device "
+            f"{device!r} was requested, but nvidia-smi is not available on PATH. "
+            "Install the NVIDIA driver/CUDA stack, or rerun with --device cpu "
+            "and without --load-in-4bit."
+        )
+    if requested_cuda and os.name == "nt":
+        try:
+            smi = subprocess.run(
+                ["nvidia-smi", "-L"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                check=False,
+            )
+        except Exception as exc:
+            raise SystemExit(
+                "[hf-agent] --device "
+                f"{device!r} was requested, but nvidia-smi preflight failed: "
+                f"{exc}. Install the NVIDIA driver/CUDA stack, or rerun with "
+                "--device cpu and without --load-in-4bit."
+            ) from exc
+        if smi.returncode != 0 or "GPU " not in (smi.stdout or ""):
+            detail = (smi.stderr or smi.stdout or "no GPU listed").strip()
+            raise SystemExit(
+                "[hf-agent] --device "
+                f"{device!r} was requested, but nvidia-smi did not report a "
+                f"usable GPU: {detail}. Install the NVIDIA driver/CUDA stack, "
+                "or rerun with --device cpu and without --load-in-4bit."
+            )
+
+    import torch  # type: ignore[import-not-found]
+
+    cuda_available = torch.cuda.is_available()
+    if requested_cuda and not cuda_available:
+        raise SystemExit(
+            "[hf-agent] --device "
+            f"{device!r} was requested, but torch.cuda.is_available() is false. "
+            "Install a CUDA-enabled PyTorch build / driver stack, or rerun with "
+            "--device cpu and without --load-in-4bit."
+        )
+    if args.load_in_4bit and (not cuda_available or device_lower == "cpu"):
+        raise SystemExit(
+            "[hf-agent] --load-in-4bit requires a CUDA device with a working "
+            "bitsandbytes installation. Rerun on CUDA, or remove --load-in-4bit."
+        )
+
+    probe_device = device if requested_cuda else "cuda:0"
+    try:
+        probe = torch.empty(1, device=probe_device)
+        del probe
+    except Exception as exc:
+        raise SystemExit(
+            "[hf-agent] CUDA preflight failed for "
+            f"{probe_device!r}: {exc}. Install a CUDA-enabled PyTorch build / "
+            "driver stack, or rerun with --device cpu and without --load-in-4bit."
+        ) from exc
+
+
 def _make_agent(args: argparse.Namespace) -> Agent:
     if args.agent == "random":
         return RandomAgent(seed=args.seed_start)
@@ -482,12 +628,15 @@ def _make_agent(args: argparse.Namespace) -> Agent:
     if args.agent == "oracle":
         return OracleAgent()
     if args.agent == "hf":
+        _preflight_hf_args(args)
         return HFAgent(
             model_name=args.model_name,
             device=args.device,
             max_new_tokens=args.max_new_tokens,
             temperature=args.temperature,
             dtype=args.dtype,
+            load_in_4bit=args.load_in_4bit,
+            local_files_only=args.local_files_only,
         )
     raise ValueError(f"Unknown agent: {args.agent}")
 
@@ -525,6 +674,16 @@ def main(argv: list[str] | None = None) -> int:
         type=str,
         default=None,
         help="Optional torch dtype name (e.g. 'bfloat16', 'float16').",
+    )
+    p.add_argument(
+        "--load-in-4bit",
+        action="store_true",
+        help="Load HF model with bitsandbytes 4-bit quantization to reduce CPU offload.",
+    )
+    p.add_argument(
+        "--local-files-only",
+        action="store_true",
+        help="Load the HF model/tokenizer from the local cache only.",
     )
 
     args = p.parse_args(argv)

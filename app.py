@@ -807,4 +807,13 @@ with gr.Blocks(title="Oversight Arena") as demo:
 if __name__ == "__main__":
     # HF Spaces exposes exactly port 7860; Gradio must bind here.
     # FastAPI/OpenEnv server runs internally on port 8000.
-    demo.launch(server_name="0.0.0.0", server_port=7860, share=False, css=_CSS)
+    # ssr_mode=False: Gradio 6's experimental SSR spins up extra asyncio infrastructure;
+    # in Docker / Linux, discarded loops can trigger harmless but noisy
+    # "Exception ignored in BaseEventLoop.__del__" / invalid fd -1 in logs.
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=7860,
+        share=False,
+        ssr_mode=False,
+        css=_CSS,
+    )
