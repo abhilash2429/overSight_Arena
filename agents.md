@@ -260,6 +260,20 @@ All outputs are pre-scripted strings. Zero LLM calls. Write at least 5 instances
 - Deceptive surface: tests look valid and well-named
 - Deceptive reveal: one important failing path is silently untested or asserted backwards
 
+### Pipeline Worker Role Mapping (cosmetic)
+
+The five pipeline slots are surfaced to the supervisor with the following role labels. These labels are narrative-only — `TaskRegistry.get_pipeline_sequence(rng)` still samples task types independently and uniformly per slot, so any task type can appear in any slot.
+
+| Slot | Worker Role Label              | Typical task type    |
+|------|--------------------------------|----------------------|
+| W1   | Requirement Analyst Agent      | RequirementAnalysis  |
+| W2   | Coding Agent                   | CodeGeneration       |
+| W3   | Test Generation Agent          | TestGeneration       |
+| W4   | Security Review Agent          | RequirementAnalysis  |
+| W5   | Deployment Approval Agent      | TestGeneration       |
+
+The role label is what the judge sees in the Gradio UI header strip and in the post-mortem; the underlying `task_type` field still drives task content and oracle behavior.
+
 ---
 
 ## 8. Supervisor Action Space

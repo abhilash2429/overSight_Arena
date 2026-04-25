@@ -342,6 +342,15 @@ _CSS = """
     background-clip: text;
 }
 .arena-tag { color: #666; font-style: italic; margin-top: 4px; font-size: 1.05em; }
+.role-strip {
+    display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+    padding: 6px 14px 14px; font-family: 'Inter', system-ui, sans-serif;
+}
+.role-pill {
+    background: #f1f3f7; color: #2c3e50; border: 1px solid #d6dae3;
+    border-radius: 999px; padding: 4px 12px; font-size: 12px;
+}
+.role-pill b { color: #4a3aa0; margin-right: 6px; }
 """
 
 # ---------------------------------------------------------------------------
@@ -359,9 +368,16 @@ with gr.Blocks(title="Oversight Arena") as demo:
         '<div class="arena-wrap">'
         '<p class="arena-title">⚖️ Oversight Arena</p>'
         '<p class="arena-tag">'
-        "Monitor AI worker pipelines &nbsp;·&nbsp; Detect failures "
-        "&nbsp;·&nbsp; Maintain integrity"
+        "Supervise an agentic dev pipeline &nbsp;·&nbsp; "
+        "Catch hidden flaws &nbsp;·&nbsp; Block bad deployments"
         "</p></div>"
+        '<div class="role-strip">'
+        '<span class="role-pill"><b>W1</b>Requirement Analyst Agent</span>'
+        '<span class="role-pill"><b>W2</b>Coding Agent</span>'
+        '<span class="role-pill"><b>W3</b>Test Generation Agent</span>'
+        '<span class="role-pill"><b>W4</b>Security Review Agent</span>'
+        '<span class="role-pill"><b>W5</b>Deployment Approval Agent</span>'
+        "</div>"
     )
 
     # ── Row 1: Episode controls ──────────────────────────────────────────────
