@@ -12,6 +12,12 @@ Layout
 5. Log / Rewards     — episode log + reward breakdown panel
 6. Oracle            — show optimal actions (uses real hidden states)
 7. Post-mortem       — full breakdown, visible only after episode ends
+
+Liveness
+--------
+``GET /health`` on the public Space port (7860) returns JSON ``{status, service}`` for
+probes. The in-container OpenEnv API on 8000 also exposes ``/health`` (see
+``server.py``) but is not reachable from the internet on Hugging Face Spaces.
 """
 
 from __future__ import annotations
@@ -26,6 +32,8 @@ from oversight_arena.log_filters import install_asyncio_stale_loop_unraisable_fi
 install_asyncio_stale_loop_unraisable_filter()
 
 import gradio as gr
+import uvicorn
+from fastapi import FastAPI
 
 from oversight_arena.environment import OversightArenaEnv, OversightArenaEnvironment
 from oversight_arena.models import WorkerState
@@ -813,18 +821,44 @@ with gr.Blocks(title="Oversight Arena") as demo:
 # Entry point
 # ---------------------------------------------------------------------------
 
-if __name__ == "__main__":
-    # HF Spaces exposes exactly port 7860; Gradio must bind here.
-    # FastAPI/OpenEnv server runs internally on port 8000.
-    # ssr_mode=False: fewer short-lived event loops. mcp_server/pwa: optional subsystems
-    # that can add more async/background work in Gradio 6+.
-    demo.launch(
+
+def _build_space_app() -> FastAPI:
+    """FastAPI app: ``/health`` liveness, Gradio UI mounted at ``/`` (public port 7860)."""
+    app = FastAPI(
+        title="Oversight Arena",
+        version="1.0.0",
+    )
+
+    @app.get(
+        "/health",
+        tags=["Health"],
+        summary="Space liveness (public on HF Spaces :7860)",
+    )
+    def space_health():
+        return {
+            "status": "ok",
+            "service": "oversight-arena",
+        }
+
+    demo.max_threads = 8
+    return gr.mount_gradio_app(
+        app,
+        demo,
+        path="/",
         server_name="0.0.0.0",
         server_port=7860,
-        share=False,
         ssr_mode=False,
         pwa=False,
         mcp_server=False,
-        max_threads=8,
         css=_CSS,
+    )
+
+
+if __name__ == "__main__":
+    # HF Spaces exposes exactly port 7860; uvi serves the FastAPI+Gradio ASGI app here.
+    # FastAPI/OpenEnv server runs internally on port 8000 (see Dockerfile / server.py).
+    uvicorn.run(
+        _build_space_app(),
+        host="0.0.0.0",
+        port=7860,
     )

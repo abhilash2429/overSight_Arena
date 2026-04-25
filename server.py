@@ -10,9 +10,12 @@ The environment is exposed via:
   POST /reset         — start a new episode
   POST /step          — submit a supervisor action (CallToolAction or raw string)
   GET  /state         — episode metadata (State object)
-  GET  /health        — liveness probe
+  GET  /health        — liveness probe (this server only; not public on HF Spaces)
   WebSocket /ws       — streaming step/reset/state
   POST /mcp           — MCP JSON-RPC endpoint (tools/list, tools/call)
+
+Public Space URL: `GET /health` on port 7860 (Gradio app.py, FastAPI wrapper), not
+this internal port 8000.
 
 Port notes (HF Spaces)
 ----------------------
