@@ -1,3 +1,15 @@
+---
+title: Oversight Arena
+emoji: ⚖️
+colorFrom: blue
+colorTo: indigo
+sdk: gradio
+sdk_version: "4.36.0"
+python_version: "3.11"
+app_file: app.py
+pinned: false
+---
+
 # Oversight Arena
 
 > Real AI fleet failures aren't obvious. We train agents to catch the ones that hide.

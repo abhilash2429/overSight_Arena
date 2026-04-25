@@ -791,4 +791,4 @@ with gr.Blocks(title="Oversight Arena") as demo:
 if __name__ == "__main__":
     # HF Spaces exposes exactly port 7860; Gradio must bind here.
     # FastAPI/OpenEnv server runs internally on port 8000.
-    demo.launch(server_port=7860, share=False, css=_CSS)
+    demo.launch(server_name="0.0.0.0", server_port=7860, share=False, css=_CSS)
