@@ -555,7 +555,7 @@ If you use Oversight Arena in your research, please cite:
 @misc{oversight-arena-2025,
   title={Oversight Arena: An RL Environment for Training AI Fleet Supervisors},
   author={Manda, Abhilash Reddy},
-  year={2025},
+  year={2026},
   url={https://huggingface.co/spaces/abhilash2429/oversight-arena}
 }
 ```
