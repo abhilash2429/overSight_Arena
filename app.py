@@ -16,6 +16,15 @@ Layout
 
 from __future__ import annotations
 
+import os
+
+# Hugging Face Spaces can enable SSR by env; keep consistent with ssr_mode=False in launch().
+os.environ.setdefault("GRADIO_SSR_MODE", "false")
+
+from oversight_arena.log_filters import install_asyncio_stale_loop_unraisable_filter
+
+install_asyncio_stale_loop_unraisable_filter()
+
 import gradio as gr
 
 from oversight_arena.environment import OversightArenaEnv, OversightArenaEnvironment
@@ -807,13 +816,15 @@ with gr.Blocks(title="Oversight Arena") as demo:
 if __name__ == "__main__":
     # HF Spaces exposes exactly port 7860; Gradio must bind here.
     # FastAPI/OpenEnv server runs internally on port 8000.
-    # ssr_mode=False: Gradio 6's experimental SSR spins up extra asyncio infrastructure;
-    # in Docker / Linux, discarded loops can trigger harmless but noisy
-    # "Exception ignored in BaseEventLoop.__del__" / invalid fd -1 in logs.
+    # ssr_mode=False: fewer short-lived event loops. mcp_server/pwa: optional subsystems
+    # that can add more async/background work in Gradio 6+.
     demo.launch(
         server_name="0.0.0.0",
         server_port=7860,
         share=False,
         ssr_mode=False,
+        pwa=False,
+        mcp_server=False,
+        max_threads=8,
         css=_CSS,
     )

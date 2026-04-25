@@ -26,6 +26,10 @@ The Dockerfile starts both processes:
 
 import os
 
+from oversight_arena.log_filters import install_asyncio_stale_loop_unraisable_filter
+
+install_asyncio_stale_loop_unraisable_filter()
+
 from openenv.core.env_server.http_server import create_app
 from openenv.core.env_server.mcp_types import CallToolAction, CallToolObservation
 
