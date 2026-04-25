@@ -155,6 +155,10 @@ class OracleAgent(Agent):
         colluding = list(s.get("colluding_pair", []) or [])
         for w in s.get("workers", []):
             wid = w["worker_id"]
+            # Important: once a worker has been approved, it stays in real_state
+            # "COMPLETED" but should no longer receive actions.
+            if wid in approved:
+                continue
             real_str = w.get("real_state_str") or w.get("state")
             if real_str is None:
                 continue
@@ -218,13 +222,51 @@ class HFAgent(Agent):
         import torch  # type: ignore[import-not-found]
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        kw: dict[str, Any] = {"device_map": device}
+        cuda_available = torch.cuda.is_available()
+
+        # Prefer CUDA for HF rollouts. Without an explicit dtype, transformers
+        # may load a 3B model in fp32 and either stay CPU-bound or heavily
+        # offload, making benchmark episodes appear frozen.
+        if dtype is None and cuda_available and device != "cpu":
+            dtype = "float16"
+
+        kw: dict[str, Any] = {}
+        if device == "auto":
+            kw["device_map"] = "auto"
+        elif device == "cpu":
+            kw["device_map"] = "cpu"
+        else:
+            kw["device_map"] = {"": device}
         if dtype is not None:
             kw["torch_dtype"] = getattr(torch, dtype)
         self.model = AutoModelForCausalLM.from_pretrained(model_name, **kw)
+        self.model.eval()
         self.max_new_tokens = max_new_tokens
         self.temperature = temperature
         self._torch = torch
+        self._input_device = self._resolve_input_device()
+        device_map = getattr(self.model, "hf_device_map", None)
+        print(
+            "[hf-agent] "
+            f"cuda_available={cuda_available} "
+            f"device_arg={device!r} dtype={dtype or 'model-default'} "
+            f"input_device={self._input_device} "
+            f"device_map={device_map or getattr(self.model, 'device', 'unknown')}"
+        )
+
+    def _resolve_input_device(self):
+        """Return the device tensors should be moved to before generation."""
+        device_map = getattr(self.model, "hf_device_map", None)
+        if isinstance(device_map, dict):
+            for dev in device_map.values():
+                dev_str = str(dev)
+                if dev_str.startswith(("cuda", "mps", "xpu")):
+                    return self._torch.device(dev_str)
+
+        try:
+            return next(self.model.parameters()).device
+        except StopIteration:
+            return self._torch.device("cuda" if self._torch.cuda.is_available() else "cpu")
 
     def act(self, env: OversightArenaEnvironment, obs_text: str) -> str:
         msgs = [
@@ -234,7 +276,7 @@ class HFAgent(Agent):
         prompt = self.tokenizer.apply_chat_template(
             msgs, tokenize=False, add_generation_prompt=True
         )
-        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
+        inputs = self.tokenizer(prompt, return_tensors="pt").to(self._input_device)
         with self._torch.no_grad():
             out = self.model.generate(
                 **inputs,
@@ -468,7 +510,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--tag", type=str, default="", help="Tag added to output filename.")
 
     # HF agent options
-    p.add_argument("--model-name", type=str, default="Qwen/Qwen2.5-3B-Instruct")
+    p.add_argument(
+        "--model-name",
+        "--model",
+        dest="model_name",
+        type=str,
+        default="Qwen/Qwen2.5-3B-Instruct",
+    )
     p.add_argument("--device", type=str, default="auto")
     p.add_argument("--max-new-tokens", type=int, default=200)
     p.add_argument("--temperature", type=float, default=0.7)
