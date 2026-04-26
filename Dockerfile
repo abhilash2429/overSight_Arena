@@ -28,6 +28,5 @@ COPY . .
 # HF Spaces exposes port 7860 (Gradio). FastAPI runs internally on 8000.
 EXPOSE 7860
 
-# Start FastAPI on 8000 (background), then Gradio on 7860 (foreground).
-# Gradio blocks, keeping the container alive.
-CMD ["sh", "-c", "uvicorn server:app --host 0.0.0.0 --port 8000 & python app.py"]
+# OpenEnv is mounted on the public ASGI app at /openenv (see app.py); single process.
+CMD ["python", "app.py"]

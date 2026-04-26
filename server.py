@@ -10,21 +10,21 @@ The environment is exposed via:
   POST /reset         — start a new episode
   POST /step          — submit a supervisor action (CallToolAction or raw string)
   GET  /state         — episode metadata (State object)
-  GET  /health        — liveness probe (this server only; not public on HF Spaces)
+  GET  /health        — liveness probe
   WebSocket /ws       — streaming step/reset/state
   POST /mcp           — MCP JSON-RPC endpoint (tools/list, tools/call)
 
-Public Space URL: `GET /health` on port 7860 (Gradio app.py, FastAPI wrapper), not
-this internal port 8000.
+On the Hugging Face Space, this app is **mounted** at ``/openenv`` on the
+public process (``app.py`` on port 7860), so the WebSocket URL path is
+``/openenv/ws``. Use ``https://huggingface.co/spaces/<user>/oversight-arena/openenv``
+as the OpenEnv *base* URL in clients. Use ``GET /health`` on the same origin for
+Gradio liveness (not on this sub-app, unless the host also forwards it).
 
-Port notes (HF Spaces)
+Port notes (local dev)
 ----------------------
-HF Spaces exposes exactly one external port: 7860.
-- Gradio UI  → port 7860  (external, HF-visible)
-- FastAPI    → port 8000  (internal only; Gradio talks to it via localhost:8000)
-
-The Dockerfile starts both processes:
-  uvicorn server:app --host 0.0.0.0 --port 8000 & python app.py
+``python app.py`` serves Gradio and mounts this app at ``/openenv`` on :7860.
+``python server.py`` (or ``uvicorn server:app --port 8000``) still works for
+local debugging on a dedicated port.
 """
 
 import os
@@ -35,8 +35,29 @@ install_asyncio_stale_loop_unraisable_filter()
 
 from openenv.core.env_server.http_server import create_app
 from openenv.core.env_server.mcp_types import CallToolAction, CallToolObservation
+from openenv.core.env_server import serialization as _openenv_serialization
+from openenv.core.env_server.types import Observation
 
 from oversight_arena.environment import OversightArenaEnvironment
+
+# openenv's default serializer omits ``metadata`` from the WebSocket JSON payload; RL
+# training needs ``metadata["pipeline_text"]`` and reward breakdowns.
+_serialize_observation_orig = _openenv_serialization.serialize_observation
+
+
+def serialize_observation(observation: Observation) -> dict:  # type: ignore[valid-type]
+    out = _serialize_observation_orig(observation)
+    inner = out.get("observation")
+    if not isinstance(inner, dict):
+        inner = {}
+    meta = getattr(observation, "metadata", None)
+    if meta:
+        inner = {**inner, "metadata": dict(meta)}
+    out["observation"] = inner
+    return out
+
+
+_openenv_serialization.serialize_observation = serialize_observation
 
 # Default to 1 concurrent session — OversightArenaEnvironment is not yet
 # validated for multi-session use.  Override via env var when ready:

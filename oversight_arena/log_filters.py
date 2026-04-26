@@ -1,38 +1,39 @@
-# oversight_arena/log_filters.py
-# ---------------------------
-# CPython logs unraisable exceptions from destructors to stderr. When Gradio/Starlette/uvicorn
-# discard a selector event loop, BaseEventLoop.__del__ can raise ValueError("Invalid file
-# descriptor: -1") on Linux — harmless. Narrow filter so real issues still surface.
+"""Small runtime log filters shared by the Space UI and OpenEnv server."""
 
 from __future__ import annotations
 
 import sys
 import traceback
-from typing import Any
+from types import SimpleNamespace
+from typing import Callable
+
+
+_INSTALLED = False
 
 
 def install_asyncio_stale_loop_unraisable_filter() -> None:
-    """Register sys.unraisablehook to drop known spurious asyncio loop teardown ValueErrors."""
-    if getattr(sys, "unraisablehook", None) is None:  # pragma: no cover
-        return
-    if getattr(sys, "_oversight_arena_stale_loop_hooked", False):
-        return
-    _orig: Any = sys.__unraisablehook__  # type: ignore[misc]
-    if not callable(_orig):
+    """Suppress noisy asyncio cleanup warnings emitted during Gradio reload/shutdown."""
+    global _INSTALLED
+    if _INSTALLED:
         return
 
-    def _hook(uh: object) -> None:
-        ex = getattr(uh, "exc_value", None)
-        if (
-            ex is not None
-            and isinstance(ex, ValueError)
-            and "Invalid file descriptor" in str(ex)
-        ):
-            tb = getattr(uh, "exc_traceback", None)
-            stack = "" if not tb else "".join(traceback.format_tb(tb))
-            if "asyncio" in stack and "base_events" in stack:
-                return
-        _orig(uh)
+    previous_hook: Callable[[SimpleNamespace], None] = sys.unraisablehook
 
-    sys.unraisablehook = _hook  # type: ignore[assignment]
-    sys._oversight_arena_stale_loop_hooked = True  # type: ignore[attr-defined]
+    def _filtered_hook(unraisable: SimpleNamespace) -> None:
+        exc = unraisable.exc_value
+        obj = unraisable.object
+        tb = getattr(unraisable, "exc_traceback", None)
+        stack = "" if tb is None else "".join(traceback.format_tb(tb))
+        text = f"{exc!r} {obj!r}"
+        stale_loop_noise = (
+            "Event loop is closed" in text
+            or "Invalid file descriptor" in text and "asyncio" in stack
+            or "BaseEventLoop.__del__" in text
+            or "ProactorBasePipeTransport.__del__" in text
+        )
+        if stale_loop_noise:
+            return
+        previous_hook(unraisable)
+
+    sys.unraisablehook = _filtered_hook
+    _INSTALLED = True
