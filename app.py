@@ -29,12 +29,23 @@ from oversight_arena.oracle import oracle_action
 #  CSS
 # ─────────────────────────────────────────────────────────────────────────────
 
-APP_CSS = """
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital,wght@0,400;1,400&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
+FORCE_LIGHT_JS = """
+() => {
+    const html = document.documentElement;
+    html.classList.remove('dark');
+    html.style.colorScheme = 'light';
+    document.body.classList.remove('dark');
+    const obs = new MutationObserver(() => {
+        if (html.classList.contains('dark')) {
+            html.classList.remove('dark');
+            html.style.colorScheme = 'light';
+        }
+    });
+    obs.observe(html, {attributes: true, attributeFilter: ['class']});
+}
+"""
 
-/* ─── Claude-light tokens ──────────────────────────────────────── */
-:root {
-  /* warm cream surfaces */
+_OA_TOKENS = """
   --bg:        #faf6f1;
   --bg-2:      #f3ece1;
   --paper:     #ffffff;
@@ -44,35 +55,67 @@ APP_CSS = """
   --dim:       #a89b8e;
   --line:      rgba(26, 22, 20, 0.10);
   --line-soft: rgba(26, 22, 20, 0.06);
-
-  /* Claude-warm accent palette (lighter, refined) */
-  --orange:        #c96442;   /* terracotta — primary */
+  --orange:        #c96442;
   --orange-soft:   #e9b89a;
   --orange-tint:   rgba(201, 100, 66, 0.08);
   --orange-line:   rgba(201, 100, 66, 0.22);
-
-  --sage:          #5b8769;   /* clean / safe */
+  --sage:          #5b8769;
   --sage-tint:     rgba(91, 135, 105, 0.10);
-
-  --crimson:       #b85c52;   /* failure / deception */
+  --crimson:       #b85c52;
   --crimson-tint:  rgba(184, 92, 82, 0.10);
   --crimson-line:  rgba(184, 92, 82, 0.30);
-
-  --amber:         #c79552;   /* suspicious */
+  --amber:         #c79552;
   --amber-tint:    rgba(199, 149, 82, 0.12);
-
-  --steel:         #6b8aa8;   /* working / info */
+  --steel:         #6b8aa8;
   --steel-tint:    rgba(107, 138, 168, 0.10);
-
-  --plum:          #a07dd4;   /* redirected */
-
-  /* type stacks */
+  --plum:          #a07dd4;
   --display: 'Instrument Serif', 'Cormorant Garamond', Georgia, serif;
   --sans:    'Geist', -apple-system, sans-serif;
   --mono:    'Geist Mono', ui-monospace, monospace;
-
   --r:  10px;
   --r-sm: 6px;
+"""
+
+APP_CSS = """
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital,wght@0,400;1,400&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
+
+/* ─── Force light everywhere — kill Gradio dark mode ───────────── */
+html, html.dark, body, body.dark {
+  background: #faf6f1 !important;
+  color-scheme: light !important;
+  color: #1a1614 !important;
+}
+
+:root {
+""" + _OA_TOKENS + """
+}
+
+/* Repeat on .gradio-container so Gradio theme vars never shadow ours */
+.gradio-container,
+.dark .gradio-container,
+html.dark .gradio-container {
+""" + _OA_TOKENS + """
+  background: #faf6f1 !important;
+  color: #2c2622 !important;
+}
+
+/* Override every Gradio dark-mode background token */
+:root, .dark, html.dark {
+  --background-fill-primary: #faf6f1 !important;
+  --background-fill-secondary: #f3ece1 !important;
+  --body-background-fill: #faf6f1 !important;
+  --block-background-fill: transparent !important;
+  --input-background-fill: #ffffff !important;
+  --body-text-color: #1a1614 !important;
+  --block-title-text-color: #1a1614 !important;
+  --block-label-text-color: #6b5d52 !important;
+  --border-color-primary: rgba(26, 22, 20, 0.10) !important;
+  --neutral-50:  #faf6f1 !important;
+  --neutral-100: #f3ece1 !important;
+  --neutral-200: #e9e0d5 !important;
+  --neutral-700: #6b5d52 !important;
+  --neutral-800: #2c2622 !important;
+  --neutral-900: #1a1614 !important;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1697,7 +1740,7 @@ def _action_label(action_text: str) -> str:
 #  Gradio layout
 # ─────────────────────────────────────────────────────────────────────────────
 
-with gr.Blocks(title="Oversight Arena", css=APP_CSS) as demo:
+with gr.Blocks(title="Oversight Arena", css=APP_CSS, theme=gr.themes.Base(), js=FORCE_LIGHT_JS) as demo:
     env_state          = gr.State(None)
     episode_log_state  = gr.State([])
     episode_done_state = gr.State(False)
