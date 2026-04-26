@@ -91,8 +91,34 @@ APP_CSS = """
   padding: 0 !important;
   overflow-x: hidden;
 }
+.gradio-container .main { padding: 0 !important; }
 
 footer { display: none !important; }
+
+/* neutralize gradio default block chrome on plain HTML / containers */
+.gradio-container .prose { max-width: none !important; color: inherit !important; }
+.gradio-container .prose h1,
+.gradio-container .prose h2,
+.gradio-container .prose h3,
+.gradio-container .prose p { color: inherit !important; margin: 0 !important; }
+.gradio-container .gr-block,
+.gradio-container .gr-form,
+.gradio-container .block,
+.gradio-container .form {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+.gradio-container .gr-html,
+.gradio-container .html-container {
+  background: transparent !important;
+  padding: 0 !important;
+  border: none !important;
+}
+.gradio-container .gap,
+.gradio-container .row,
+.gradio-container .column { background: transparent !important; }
 
 /* ─── soft warm grain backdrop ────────────────────────────────── */
 .oa-root { position: relative; background: var(--bg); }
@@ -218,11 +244,14 @@ footer { display: none !important; }
 .oa-section-head {
   display: flex;
   align-items: baseline;
-  gap: 24px;
+  flex-wrap: wrap;
+  gap: 16px 24px;
   margin-bottom: 28px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--line-soft);
 }
+.oa-section-head .oa-section-num { flex: 0 0 auto; }
+.oa-section-head .oa-section-title { flex: 1 1 auto; }
 .oa-section-num {
   font-family: var(--mono) !important;
   font-size: 11px;
@@ -627,38 +656,152 @@ footer { display: none !important; }
   background: var(--bg-2);
 }
 
-/* ─── Gradio overrides ───────────────────────────────────────── */
-.obs-text textarea, .act-text textarea {
+/* ─── Gradio layout containers (real fix) ─────────────────────── */
+/* Gradio Rows/Columns get our card styling via elem_classes.
+   We also tame Gradio's default block backgrounds & borders so our
+   palette wins. */
+
+.oa-row {
+  padding: 0 64px 18px !important;
+  gap: 20px !important;
+}
+.oa-row > .gr-column,
+.oa-row > div[class*="column"] { padding: 0 !important; }
+
+.oa-card {
   background: var(--paper) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--r) !important;
+  padding: 22px 22px 20px !important;
+  display: flex !important;
+  flex-direction: column;
+  gap: 14px;
+}
+.oa-card-hdr {
+  font-family: var(--mono) !important;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line-soft);
+  margin-bottom: 4px;
+}
+.oa-card-hdr .oa-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--orange); animation: blink 1.5s ease-in-out infinite; }
+
+.oa-status-col {
+  background: var(--bg-2) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--r) !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+.oa-status-col .oa-stats {
+  border-bottom: none;
+  background: transparent;
+  grid-template-columns: 1fr 1fr;
+}
+.oa-status-col .oa-stat:nth-child(odd)  { border-right: 1px solid var(--line); }
+.oa-status-col .oa-stat:nth-child(-n+3) { border-bottom: 1px solid var(--line); }
+.oa-status-col .oa-stat:last-child { border-right: none; grid-column: 1 / -1; }
+
+.oa-btn-row { gap: 8px !important; align-items: stretch !important; }
+
+/* tame default Gradio block chrome inside our cards */
+.oa-card .block,
+.oa-card .form,
+.oa-card .gr-form,
+.oa-card .gr-box,
+.oa-card .wrap {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* textareas */
+.obs-text textarea, .act-text textarea {
+  background: var(--bg-2) !important;
   border: 1px solid var(--line) !important;
   border-radius: var(--r-sm) !important;
   color: var(--ink-soft) !important;
   font-family: var(--mono) !important;
   font-size: 12px !important;
   line-height: 1.65 !important;
-  padding: 16px !important;
+  padding: 14px !important;
+  box-shadow: none !important;
 }
 .act-text textarea {
   background: var(--orange-tint) !important;
   border-color: var(--orange-line) !important;
   color: var(--ink) !important;
+  font-weight: 500 !important;
+}
+.obs-text textarea:focus,
+.act-text textarea:focus,
+input:focus, textarea:focus {
+  outline: none !important;
+  border-color: var(--orange) !important;
+  box-shadow: 0 0 0 3px var(--orange-tint) !important;
 }
 
+/* number / textbox inputs */
+.gradio-container input[type="number"],
+.gradio-container input[type="text"] {
+  background: var(--paper) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--r-sm) !important;
+  color: var(--ink-soft) !important;
+  font-family: var(--mono) !important;
+  font-size: 12.5px !important;
+  padding: 8px 10px !important;
+}
+
+/* radio chips */
+.gradio-container [data-testid="radio"] label,
+.gradio-container .gr-radio label {
+  background: var(--paper) !important;
+  border: 1px solid var(--line) !important;
+  color: var(--ink-soft) !important;
+  font-family: var(--sans) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  border-radius: var(--r-sm) !important;
+  padding: 7px 12px !important;
+  transition: all 0.18s;
+}
+.gradio-container [data-testid="radio"] input:checked + span,
+.gradio-container [data-testid="radio"] label:has(input:checked) {
+  border-color: var(--orange) !important;
+  background: var(--orange-tint) !important;
+  color: var(--orange) !important;
+}
+
+/* buttons — primary (filled ink) */
 button[class*="primary"], .gr-button-primary {
   background: var(--ink) !important;
   color: var(--bg) !important;
-  border: none !important;
+  border: 1px solid var(--ink) !important;
   border-radius: var(--r-sm) !important;
   font-family: var(--sans) !important;
-  font-size: 13px !important;
+  font-size: 12.5px !important;
   font-weight: 500 !important;
   letter-spacing: 0.01em !important;
-  padding: 10px 20px !important;
+  padding: 10px 18px !important;
+  box-shadow: none !important;
   transition: opacity 0.18s, transform 0.18s !important;
 }
 button[class*="primary"]:hover { opacity: 0.88 !important; transform: translateY(-1px); }
 
-button[class*="secondary"], .gr-button-secondary {
+/* buttons — secondary (outlined) */
+button[class*="secondary"], .gr-button-secondary,
+.gradio-container button:not([class*="primary"]) {
   background: var(--paper) !important;
   color: var(--ink-soft) !important;
   border: 1px solid var(--line) !important;
@@ -666,26 +809,28 @@ button[class*="secondary"], .gr-button-secondary {
   font-family: var(--sans) !important;
   font-size: 12px !important;
   font-weight: 500 !important;
+  padding: 8px 14px !important;
+  box-shadow: none !important;
+  transition: all 0.18s !important;
 }
-button[class*="secondary"]:hover {
-  background: var(--bg-2) !important;
+button[class*="secondary"]:hover,
+.gradio-container button:not([class*="primary"]):hover {
+  background: var(--orange-tint) !important;
   border-color: var(--orange) !important;
   color: var(--orange) !important;
 }
 
-/* generic small Gradio buttons */
-.gradio-container button {
-  font-family: var(--sans) !important;
-}
-
-/* radio + number labels */
-.gradio-container label,
-.gradio-container .label-wrap span {
+/* labels — small caps mono */
+.gradio-container label > span:first-child,
+.gradio-container .label-wrap > span:first-child,
+.gradio-container .gr-label {
   font-family: var(--mono) !important;
-  font-size: 10.5px !important;
-  letter-spacing: 0.12em !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.14em !important;
   text-transform: uppercase !important;
   color: var(--muted) !important;
+  margin-bottom: 6px !important;
 }
 
 /* ─── SVG keyframes ──────────────────────────────────────────── */
@@ -764,11 +909,14 @@ button[class*="secondary"]:hover {
   .oa-nodes, .oa-stats, .oa-steps { grid-template-columns: repeat(2,1fr); }
   .oa-pm-grid { grid-template-columns: 1fr; }
   .oa-section, .oa-pm { padding-left: 32px; padding-right: 32px; }
+  .oa-row { padding-left: 32px !important; padding-right: 32px !important; }
 }
 @media (max-width: 680px) {
   .oa-nodes, .oa-stats, .oa-steps, .oa-reward-grid { grid-template-columns: 1fr; }
   .oa-hero, .oa-section, .oa-pm { padding-left: 20px; padding-right: 20px; }
-  .oa-section-copy { text-align: left; }
+  .oa-row { padding-left: 20px !important; padding-right: 20px !important; }
+  .oa-section-copy { text-align: left; margin-left: 0; }
+  .oa-section-head { flex-direction: column; align-items: flex-start; gap: 8px; }
 }
 """
 
@@ -1558,17 +1706,18 @@ with gr.Blocks(title="Oversight Arena") as demo:
     gr.HTML(hero_html())
     gr.HTML(how_html())
 
-    # ── controls row ────────────────────────────────────────────────────────
-    gr.HTML("""<div class="oa-section" style="padding-bottom:24px;">
-      <div class="oa-section-head">
-        <span class="oa-section-num">02 — Run it</span>
-        <span class="oa-section-title">Pick a scenario. Hit start.</span>
-        <span class="oa-section-copy">Each run is deterministic and reproducible — same seed, same outcome. Use the oracle button to auto-step a perfect supervisor.</span>
-      </div>
-    </div>""")
-    with gr.Row(equal_height=False):
-        with gr.Column(scale=5):
-            gr.HTML('<div class="oa-section" style="padding-top:0; padding-bottom:12px;">')
+    # ── 02 · controls row ───────────────────────────────────────────────────
+    gr.HTML("""
+<div class="oa-section">
+  <div class="oa-section-head">
+    <span class="oa-section-num">02 — Run it</span>
+    <span class="oa-section-title">Pick a scenario. Hit start.</span>
+    <span class="oa-section-copy">Each run is deterministic and reproducible — same seed, same outcome. Use the oracle button to auto-step a perfect supervisor.</span>
+  </div>
+</div>
+""")
+    with gr.Row(equal_height=False, elem_classes=["oa-row", "oa-controls-row"]):
+        with gr.Column(scale=5, elem_classes=["oa-card", "oa-controls-card"]):
             with gr.Row():
                 scenario_radio = gr.Radio(
                     choices=[
@@ -1596,63 +1745,63 @@ with gr.Blocks(title="Oversight Arena") as demo:
                 reset_btn      = gr.Button("▶  Start Simulation",       variant="primary",    scale=2)
                 auto_step_btn  = gr.Button("⚡  Oracle-Guided Step",    variant="primary",    scale=2)
                 show_oracle_btn= gr.Button("⊙  Show Oracle",            variant="secondary",  scale=1)
-            gr.HTML("</div>")
-        with gr.Column(scale=3):
+        with gr.Column(scale=3, elem_classes=["oa-status-col"]):
             status_display = gr.HTML(status_html())
 
-    # ── live pipeline ────────────────────────────────────────────────────────
+    # ── 03 · live pipeline (self-contained section) ─────────────────────────
     pipeline_display = gr.HTML(pipeline_html(None))
 
-    # ── observation + action console ─────────────────────────────────────────
-    gr.HTML("""<div class="oa-section" style="padding-bottom:18px;">
-      <div class="oa-section-head">
-        <span class="oa-section-num">04 — Console</span>
-        <span class="oa-section-title">Observe. Inspect. Decide.</span>
-        <span class="oa-section-copy">Every action you submit is real — it goes through env.step() and updates the live state on the left.</span>
-      </div>
-    </div>""")
-    with gr.Row():
-        with gr.Column(scale=3):
+    # ── 04 · observation + action console ──────────────────────────────────
+    gr.HTML("""
+<div class="oa-section">
+  <div class="oa-section-head">
+    <span class="oa-section-num">04 — Console</span>
+    <span class="oa-section-title">Observe. Inspect. Decide.</span>
+    <span class="oa-section-copy">Every action you submit is real — it goes through env.step() and updates the live state above.</span>
+  </div>
+</div>
+""")
+    with gr.Row(elem_classes=["oa-row", "oa-console-row"], equal_height=False):
+        with gr.Column(scale=3, elem_classes=["oa-card", "oa-obs-card"]):
+            gr.HTML("""<div class="oa-card-hdr"><span class="oa-dot"></span>Supervisor observation</div>""")
             observation_box = gr.Textbox(
-                label="Supervisor Observation — raw env.step() return",
+                show_label=False,
                 value="Start a simulation to see the real observation string.",
-                lines=22, max_lines=44, interactive=False,
+                lines=20, max_lines=44, interactive=False,
                 elem_classes=["obs-text"],
             )
-        with gr.Column(scale=2):
-            gr.HTML("""<div class="oa-console" style="margin-bottom:10px;">
-              <div class="oa-console-hdr"><div class="oa-dot"></div>Quick Actions</div>
-              <div style="padding:14px 16px 4px;">""")
-            with gr.Row():
+        with gr.Column(scale=2, elem_classes=["oa-card", "oa-actions-card"]):
+            gr.HTML("""<div class="oa-card-hdr"><span class="oa-dot"></span>Quick actions</div>""")
+            with gr.Row(elem_classes=["oa-btn-row"]):
                 obs_buttons = [gr.Button(f"OBS W{i}", size="sm") for i in range(1, 6)]
-            gr.HTML('<div style="height:8px;"></div>')
-            with gr.Row():
+            with gr.Row(elem_classes=["oa-btn-row"]):
                 action_worker_num = gr.Number(label="Worker #", value=1, minimum=1, maximum=5, step=1, precision=0)
-                deep_btn      = gr.Button("Deep Inspect",  size="sm")
+                deep_btn      = gr.Button("Deep inspect",  size="sm")
                 terminate_btn = gr.Button("Terminate",     size="sm")
                 approve_btn   = gr.Button("Approve",       size="sm")
-            gr.HTML('<div style="height:8px;"></div>')
-            with gr.Row():
+            with gr.Row(elem_classes=["oa-btn-row"]):
                 redirect_worker_num = gr.Number(label="Redirect #", value=1, minimum=1, maximum=5, step=1, precision=0)
                 redirect_instr = gr.Textbox(label="Instruction", placeholder="Refocus on the original task.", lines=1)
             redirect_btn = gr.Button("↩ Redirect", size="sm")
-            gr.HTML("</div></div>")
+            gr.HTML("""<div class="oa-card-hdr" style="margin-top:14px;"><span class="oa-dot"></span>Action payload</div>""")
             action_input = gr.Textbox(
-                label="Action text  →  passed to env.step()",
+                show_label=False,
                 value=_format_action("OBSERVE", 1),
                 lines=5, elem_classes=["act-text"],
             )
-            step_btn = gr.Button("▶  Submit Action", variant="primary")
+            step_btn = gr.Button("▶  Submit action", variant="primary")
 
-    # ── log + rewards ────────────────────────────────────────────────────────
-    gr.HTML("""<div class="oa-section" style="padding-bottom:18px;">
-      <div class="oa-section-head">
-        <span class="oa-section-num">05 — Telemetry</span>
-        <span class="oa-section-title">Audit trail &amp; reward signal.</span>
-        <span class="oa-section-copy">Nine independent reward components, gated by an episode multiplier. The supervisor only earns full credit when the seeded failure plan is perfectly resolved.</span>
-      </div>
-    </div>""")
-    with gr.Row():
+    # ── 05 · log + rewards ──────────────────────────────────────────────────
+    gr.HTML("""
+<div class="oa-section">
+  <div class="oa-section-head">
+    <span class="oa-section-num">05 — Telemetry</span>
+    <span class="oa-section-title">Audit trail &amp; reward signal.</span>
+    <span class="oa-section-copy">Nine independent reward components, gated by an episode multiplier. The supervisor only earns full credit when the seeded failure plan is perfectly resolved.</span>
+  </div>
+</div>
+""")
+    with gr.Row(elem_classes=["oa-row", "oa-telemetry-row"]):
         with gr.Column(scale=3):
             episode_log_display = gr.HTML(log_html([]))
         with gr.Column(scale=2):

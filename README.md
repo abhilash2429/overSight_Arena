@@ -411,7 +411,7 @@ The plotting cell in `training/train_grpo.ipynb` regenerates everything under `a
 
 ### Benchmark — trained vs. baselines
 
-Once `eval/results/grpo_trained.json` exists, drop its `summary.{easy,medium,hard}.mean_reward` into the table below. Numbers in the "Trained" column come from `python -m eval.benchmark --agent hf --model-name oversight-arena-trained --difficulty all --episodes 50`, which uses **raw environment reward only** — no shaping bonuses at eval time.
+Once `eval/results/grpo_trained.json` exists, drop its `summary.{easy,medium,hard}.mean_reward` into the table below. Numbers in the "Trained" column come from `python -m eval.benchmark --agent hf --model-name oversight-arena-trained --difficulty all --episodes 30` (90 episodes total across difficulties), which uses **raw environment reward only** — no shaping bonuses at eval time.
 
 | Difficulty | Random | Heuristic | Qwen base | **Trained (GRPO)** | Oracle |
 |---|---:|---:|---:|---:|---:|
@@ -442,7 +442,7 @@ python -m eval.benchmark --agent oracle      --difficulty all --episodes 30 --ou
 
 # Trained model (after running the training notebook)
 python -m eval.benchmark --agent hf --model-name oversight-arena-trained \
-                         --difficulty all --episodes 50 \
+                         --difficulty all --episodes 30 \
                          --out eval/results/grpo_trained.json
 ```
 

@@ -29,7 +29,7 @@ Usage
 
     # Untrained Qwen baseline (needs a GPU; can also pass --device cpu)
     python -m eval.benchmark --agent hf --model-name Qwen/Qwen2.5-3B-Instruct \\
-        --episodes 50 --difficulty all
+        --episodes 30 --difficulty all
 
 After training, repeat with ``--agent hf --model-name <your-trained-path>``
 and diff the two summaries. Use ``eval/plot.py`` to render reward curves.
@@ -673,7 +673,12 @@ def main(argv: list[str] | None = None) -> int:
         choices=["easy", "medium", "hard", "all"],
         default="all",
     )
-    p.add_argument("--episodes", type=int, default=50)
+    p.add_argument(
+        "--episodes",
+        type=int,
+        default=30,
+        help="Rollouts per difficulty (with --difficulty all, 30 => 90 episodes total).",
+    )
     p.add_argument("--seed-start", type=int, default=0)
     p.add_argument("--out", type=str, default=None)
     p.add_argument("--tag", type=str, default="", help="Tag added to output filename.")

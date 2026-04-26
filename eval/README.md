@@ -16,11 +16,11 @@ python -m eval.benchmark --agent oracle    --episodes 100 --difficulty all
 
 # Untrained Qwen baseline (HF transformers, GPU recommended)
 python -m eval.benchmark --agent hf --model-name Qwen/Qwen2.5-3B-Instruct \
-    --episodes 50 --difficulty all --tag baseline
+    --episodes 30 --difficulty all --tag baseline
 
 # After training, re-run with the trained weights
 python -m eval.benchmark --agent hf --model-name <path/to/trained> \
-    --episodes 50 --difficulty all --tag trained
+    --episodes 30 --difficulty all --tag trained
 ```
 
 Each run writes a JSON file under `eval/results/`. Filename includes the agent and an optional `--tag`.
