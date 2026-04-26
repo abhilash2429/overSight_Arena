@@ -1740,7 +1740,7 @@ def _action_label(action_text: str) -> str:
 #  Gradio layout
 # ─────────────────────────────────────────────────────────────────────────────
 
-with gr.Blocks(title="Oversight Arena", css=APP_CSS, theme=gr.themes.Base(), js=FORCE_LIGHT_JS) as demo:
+with gr.Blocks(title="Oversight Arena") as demo:
     env_state          = gr.State(None)
     episode_log_state  = gr.State([])
     episode_done_state = gr.State(False)
@@ -2007,6 +2007,9 @@ def _build_space_app() -> FastAPI:
         server_name="0.0.0.0",
         server_port=7860,
         ssr_mode=False, pwa=False, mcp_server=False,
+        theme=gr.themes.Base(),
+        css=APP_CSS,
+        js=FORCE_LIGHT_JS,
     )
 
 
