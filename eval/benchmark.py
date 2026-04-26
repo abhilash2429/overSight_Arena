@@ -39,6 +39,17 @@ Notes
 * This module never modifies the environment; it only calls ``reset()`` and
   ``step()``. ``state_dict`` is used read-only for the oracle agent.
 * Output is JSON-only, so a downstream notebook / plotter can consume it.
+* Relative ``--out`` paths are anchored to the **discovered repo root** (not the
+  shell cwd). On a full clone that is the parent of ``eval/`` (contains
+  ``oversight_arena/``). On a flat HF Space with ``train_grpo.ipynb`` and a
+  top-level ``eval/`` next to an ``oversight-arena/`` subfolder, the repo root is
+  taken as ``oversight-arena/`` so outputs match
+  ``oversight-arena/eval/results/``. Relative local ``--model-name`` directories
+  are resolved against cwd, repo root, and parent of repo root before falling
+  back to a Hub id.
+* The repo root is prepended to ``sys.path`` before importing ``oversight_arena``,
+  so imports work when cwd is the flat Space root while the package lives under
+  ``oversight-arena/``.
 """
 
 from __future__ import annotations
@@ -51,15 +62,84 @@ import re
 import shutil
 import statistics
 import subprocess
+import sys
 import time
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+
+def _discover_repo_root() -> Path:
+    """Directory that contains both ``eval/`` and the ``oversight_arena`` package.
+
+    - **Standard clone:** ``.../oversight-arena/eval/benchmark.py`` →
+      ``.../oversight-arena``.
+    - **Flat Space:** ``<workspace>/eval/benchmark.py`` with the real tree under
+      ``<workspace>/oversight-arena/oversight_arena/`` → ``<workspace>/oversight-arena``.
+    """
+    eval_dir = Path(__file__).resolve().parent
+    parent = eval_dir.parent
+    std_pkg = parent / "oversight_arena" / "__init__.py"
+    if std_pkg.is_file():
+        return parent
+    nested = parent / "oversight-arena"
+    if (nested / "oversight_arena" / "__init__.py").is_file():
+        return nested
+    return parent
+
+
+def _prepend_repo_root_to_syspath() -> Path:
+    """Put the repo root on ``sys.path`` so ``oversight_arena`` imports work.
+
+    When ``python -m eval.benchmark`` runs with cwd set to the workspace root,
+    Python adds the workspace to ``sys.path``, not ``.../oversight-arena`` where
+    the package actually lives. Without this, ``from oversight_arena...`` fails.
+    """
+    root = _discover_repo_root()
+    marker = root / "oversight_arena" / "__init__.py"
+    if not marker.is_file():
+        raise SystemExit(
+            "[benchmark] Cannot import oversight_arena (environment package). "
+            f"Expected package at {marker}. Use a full repo (eval/ + oversight_arena/) "
+            "or run from the inner oversight-arena/ directory. "
+            f"This file: {Path(__file__).resolve()}"
+        )
+    rs = str(root.resolve())
+    if rs not in sys.path:
+        sys.path.insert(0, rs)
+    return root
+
+
+_REPO_ROOT = _prepend_repo_root_to_syspath()
+
 from oversight_arena.environment import OversightArenaEnvironment
 from oversight_arena.models import WorkerState
 from oversight_arena.oracle import oracle_action
+
+
+def _resolve_out_path(out: str) -> Path:
+    """Relative ``--out`` is under repo root (not the shell cwd)."""
+    p = Path(out)
+    if p.is_absolute():
+        return p
+    return _REPO_ROOT / p
+
+
+def _resolve_hf_local_model_dir(model_name: str) -> str:
+    """If ``model_name`` is a relative path to an existing directory, absolute-ize it.
+
+    Tries cwd, repo root, then parent of repo root — same bases as the GRPO notebook
+    benchmark cell. Hub ids (no matching dir) are returned unchanged.
+    """
+    if os.path.isabs(model_name):
+        return model_name
+    for base in (Path.cwd(), _REPO_ROOT, _REPO_ROOT.parent):
+        cand = (base / model_name).resolve()
+        if cand.is_dir():
+            return str(cand)
+    return model_name
+
 
 # ---------------------------------------------------------------------------
 # Agent interface
@@ -680,7 +760,13 @@ def main(argv: list[str] | None = None) -> int:
         help="Rollouts per difficulty (with --difficulty all, 30 => 90 episodes total).",
     )
     p.add_argument("--seed-start", type=int, default=0)
-    p.add_argument("--out", type=str, default=None)
+    p.add_argument(
+        "--out",
+        type=str,
+        default=None,
+        help="Output JSON path. Relative paths are resolved under the discovered "
+        "repo root (see module docstring), not the process cwd.",
+    )
     p.add_argument("--tag", type=str, default="", help="Tag added to output filename.")
 
     # HF agent options
@@ -719,22 +805,39 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"[benchmark] agent={args.agent} difficulties={difficulties} "
           f"episodes={args.episodes} seed_start={args.seed_start}")
+    if args.agent == "hf":
+        args.model_name = _resolve_hf_local_model_dir(args.model_name)
     agent = _make_agent(args)
     env = OversightArenaEnvironment()
 
+    if args.agent == "hf":
+        n_rollouts = len(difficulties) * args.episodes
+        print(
+            "[benchmark] Model loaded. HF rollouts are slow (many generate() calls per "
+            f"episode); printing progress every episode. Total rollouts ≈ {n_rollouts}.",
+            flush=True,
+        )
+
     episodes: list[EpisodeResult] = []
+    hf_progress_every = 1  # otherwise nothing prints until episode 10 (looks hung)
     for diff in difficulties:
+        print(f"[benchmark] difficulty={diff!r} …", flush=True)
         for i in range(args.episodes):
             seed = args.seed_start + i
             ep = run_episode(env, agent, diff, seed)
             episodes.append(ep)
-            if (i + 1) % 10 == 0 or (i + 1) == args.episodes:
-                so_far = [
-                    e.total_reward for e in episodes if e.difficulty == diff
-                ]
+            so_far = [e.total_reward for e in episodes if e.difficulty == diff]
+            step = i + 1
+            show = (
+                args.agent == "hf"
+                and (step % hf_progress_every == 0 or step == args.episodes)
+            ) or (step % 10 == 0 or step == args.episodes)
+            if show:
                 print(
-                    f"  [{diff}] {i + 1:>3}/{args.episodes} "
-                    f"mean_reward={statistics.fmean(so_far):+.3f}"
+                    f"  [{diff}] {step:>3}/{args.episodes} "
+                    f"mean_reward={statistics.fmean(so_far):+.3f} "
+                    f"last_ep={ep.elapsed_s:.1f}s",
+                    flush=True,
                 )
 
     summary = aggregate(episodes)
@@ -742,7 +845,7 @@ def main(argv: list[str] | None = None) -> int:
 
     out_path: Path
     if args.out:
-        out_path = Path(args.out)
+        out_path = _resolve_out_path(args.out)
     else:
         ts = int(time.time())
         tag = f"_{args.tag}" if args.tag else ""

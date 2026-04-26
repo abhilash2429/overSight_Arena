@@ -12,6 +12,87 @@ pinned: false
 
 # Oversight Arena
 
+Real AI fleet failures are often silent. Oversight Arena is an RL environment for training a supervisor model to catch failures that look correct on the surface.
+
+This README is intentionally text-only for Hugging Face Space compatibility.
+
+## Quick Links
+
+- Live Space: [https://huggingface.co/spaces/abhilash242299/oversight-arena](https://huggingface.co/spaces/abhilash242299/oversight-arena)
+- OpenEnv endpoint: [https://huggingface.co/spaces/abhilash242299/oversight-arena/openenv](https://huggingface.co/spaces/abhilash242299/oversight-arena/openenv)
+- Blog post: [blog-post.mdx](blog-post.mdx)
+- GitHub repo: [https://github.com/abhilash242299/oversight-arena](https://github.com/abhilash242299/oversight-arena)
+
+## What this project does
+
+Oversight Arena simulates a 5-worker pipeline:
+
+`Requirement -> Coding -> Tests -> Security -> Deployment`
+
+The supervisor must decide when to:
+
+- observe a worker
+- inspect deeply
+- redirect it
+- terminate it
+- approve it
+
+The environment includes:
+
+- deceptive workers that look clean unless deeply inspected
+- colluding worker pairs that are consistent with each other but jointly wrong
+- cascading corruption risk when bad output is approved
+
+## Baseline benchmark snapshot
+
+From `eval/results/random.json`, `eval/results/heuristic.json`, and `eval/results/oracle.json`:
+
+| Agent | Easy | Medium | Hard |
+|---|---:|---:|---:|
+| Random | 6.45 | 6.85 | 6.64 |
+| Heuristic | 22.56 | 20.86 | 14.73 |
+| Oracle | 22.20 | 22.03 | 19.64 |
+
+Trained model results can be added from:
+
+- `eval/results/grpo_trained.json`
+
+## Training
+
+Training notebook:
+
+- `training/train_grpo.ipynb`
+
+Approach:
+
+- GRPO with easy -> medium -> hard curriculum
+- reward shaping for format bootstrapping
+- raw environment reward used for benchmark comparison
+
+## Citation
+
+```bibtex
+@misc{oversight-arena-2026,
+  title={Oversight Arena: An RL Environment for Training AI Fleet Supervisors},
+  author={Manda, Abhilash Reddy},
+  year={2026},
+  url={https://huggingface.co/spaces/abhilash242299/oversight-arena}
+}
+```
+---
+title: Oversight Arena
+emoji: ⚖️
+colorFrom: blue
+colorTo: indigo
+sdk: gradio
+sdk_version: "6.10.0"
+python_version: "3.11"
+app_file: app.py
+pinned: false
+---
+
+# Oversight Arena
+
 > Real AI fleet failures aren't loud. They look fine on the dashboard.
 > This is an environment for training a supervisor LLM to catch the ones that hide.
 
