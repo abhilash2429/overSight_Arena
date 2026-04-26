@@ -1,0 +1,65 @@
+{
+  "agent": "hf",
+  "model_name": "meta-llama/Llama-3.2-3B-Instruct",
+  "args": {
+    "agent": "hf",
+    "difficulty": "all",
+    "episodes": 30,
+    "seed_start": 0,
+    "out": "eval/results/llama_3_2_3b_instruct.json",
+    "tag": "",
+    "model_name": "meta-llama/Llama-3.2-3B-Instruct",
+    "device": "auto",
+    "max_new_tokens": 200,
+    "temperature": 0.7,
+    "dtype": "float16",
+    "load_in_4bit": false,
+    "local_files_only": false
+  },
+  "summary": {
+    "easy": {
+      "difficulty": "easy",
+      "n": 30,
+      "mean_reward": 4.495,
+      "stderr_reward": 0.34,
+      "mean_steps": 25.0,
+      "result_counts": {
+        "TIMEOUT": 30
+      },
+      "mean_breakdown": {},
+      "mean_deep_inspect": 0.0,
+      "mean_format_penalty": 23.4,
+      "collusion_catch_rate": 0.0
+    },
+    "medium": {
+      "difficulty": "medium",
+      "n": 30,
+      "mean_reward": 5.425,
+      "stderr_reward": 0.53,
+      "mean_steps": 25.1,
+      "result_counts": {
+        "TIMEOUT": 30
+      },
+      "mean_breakdown": {},
+      "mean_deep_inspect": 0.0,
+      "mean_format_penalty": 23.2,
+      "collusion_catch_rate": 0.0
+    },
+    "hard": {
+      "difficulty": "hard",
+      "n": 30,
+      "mean_reward": 5.025,
+      "stderr_reward": 0.5,
+      "mean_steps": 25.0,
+      "result_counts": {
+        "TIMEOUT": 30
+      },
+      "mean_breakdown": {},
+      "mean_deep_inspect": 0.0,
+      "mean_format_penalty": 23.43,
+      "collusion_catch_rate": 0.0
+    }
+  },
+  "episodes": [],
+  "_note": "Summary reconstructed from a benchmark run log. Per-episode rows were not in the log; re-run: python -m eval.benchmark --agent hf --model-name meta-llama/Llama-3.2-3B-Instruct --episodes 30 --difficulty all --out eval/results/llama_3_2_3b_instruct.json"
+}
