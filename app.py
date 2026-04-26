@@ -1,9 +1,7 @@
 """
-Oversight Arena judge interface.
-
-This Gradio app is the public Hugging Face Space frontend. It keeps the real
-environment execution path intact while presenting the benchmark as a polished,
-judge-friendly product demo rather than a developer test harness.
+Oversight Arena — Gradio judge interface.
+Cyberpunk security-ops console aesthetic.
+Real environment execution, no fake demos.
 """
 
 from __future__ import annotations
@@ -13,7 +11,6 @@ import os
 import re
 from typing import Any
 
-# Hugging Face Spaces can enable SSR by env; keep consistent with ssr_mode=False.
 os.environ.setdefault("GRADIO_SSR_MODE", "false")
 
 from oversight_arena.log_filters import install_asyncio_stale_loop_unraisable_filter
@@ -29,1134 +26,1210 @@ from oversight_arena.models import WorkerState
 from oversight_arena.oracle import oracle_action
 
 
-APP_CSS = """
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+# ─────────────────────────────────────────────────────────────────────────────
+#  CSS
+# ─────────────────────────────────────────────────────────────────────────────
 
+APP_CSS = """
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap');
+
+/* ── reset & root ─────────────────────────────────────────────── */
 :root {
-  --oa-bg: #07111f;
-  --oa-bg-2: #0b1727;
-  --oa-panel: rgba(13, 24, 41, 0.86);
-  --oa-panel-strong: rgba(16, 31, 53, 0.96);
-  --oa-line: rgba(148, 163, 184, 0.20);
-  --oa-text: #eef6ff;
-  --oa-muted: #9fb0c6;
-  --oa-dim: #6f8198;
-  --oa-cyan: #5eead4;
-  --oa-blue: #60a5fa;
-  --oa-green: #34d399;
-  --oa-amber: #fbbf24;
-  --oa-red: #fb7185;
-  --oa-violet: #a78bfa;
-  --oa-shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
+  --void:   #04070d;
+  --deep:   #070d19;
+  --panel:  rgba(6, 12, 24, 0.97);
+  --rim:    rgba(0, 255, 170, 0.16);
+  --rim-hot:rgba(0, 255, 170, 0.50);
+
+  --sig:  #00ffaa;
+  --bad:  #ff3358;
+  --wire: #22d3ff;
+  --warn: #f5a623;
+  --idle: #2a3f52;
+
+  --text:  #dceeff;
+  --muted: #6a8aaa;
+  --dim:   #2d4156;
+
+  --mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+  --disp: 'Syne', 'JetBrains Mono', monospace;
+
+  --r: 4px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+.gradio-container,
+.gradio-container * {
+  font-family: var(--mono) !important;
 }
 
 .gradio-container {
-  max-width: 1440px !important;
-  color: var(--oa-text);
-  background:
-    radial-gradient(circle at 12% 0%, rgba(94, 234, 212, 0.20), transparent 30%),
-    radial-gradient(circle at 88% 12%, rgba(167, 139, 250, 0.20), transparent 32%),
-    linear-gradient(180deg, #07111f 0%, #0b1220 46%, #09111d 100%) !important;
-  font-family: "IBM Plex Sans", system-ui, sans-serif !important;
+  max-width: 1540px !important;
+  background: var(--void) !important;
+  color: var(--text) !important;
+  padding: 0 !important;
+  overflow-x: hidden;
 }
 
-.oa-wrap {
-  width: 100%;
-}
+footer { display: none !important; }
 
-.oa-hero {
+/* ── circuit grid background ──────────────────────────────────── */
+.oa-root {
   position: relative;
-  overflow: hidden;
-  border: 1px solid rgba(148, 163, 184, 0.20);
-  border-radius: 30px;
-  padding: 34px;
-  margin: 6px 0 18px;
-  background:
-    linear-gradient(135deg, rgba(94, 234, 212, 0.14), transparent 30%),
-    linear-gradient(315deg, rgba(96, 165, 250, 0.16), transparent 34%),
-    rgba(7, 17, 31, 0.82);
-  box-shadow: var(--oa-shadow);
+  background: var(--void);
 }
-
-.oa-hero:after {
+.oa-root::before {
   content: "";
-  position: absolute;
+  position: fixed;
   inset: 0;
+  z-index: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
-  background-size: 34px 34px;
-  mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.45), transparent 72%);
+    linear-gradient(rgba(0,255,170,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,170,0.035) 1px, transparent 1px);
+  background-size: 52px 52px;
 }
 
-.oa-kicker {
-  display: inline-flex;
+/* ── hero ─────────────────────────────────────────────────────── */
+.oa-hero {
+  position: relative;
+  padding: 64px 56px 0;
+  overflow: hidden;
+}
+.oa-hero::after {
+  content: "";
+  position: absolute;
+  bottom: 0; left: 56px; right: 56px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--sig) 30%, var(--wire) 70%, transparent);
+  opacity: 0.35;
+}
+
+.oa-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--sig);
+  margin-bottom: 22px;
+  display: flex;
   align-items: center;
   gap: 10px;
-  color: var(--oa-cyan);
-  border: 1px solid rgba(94, 234, 212, 0.28);
-  border-radius: 999px;
-  padding: 7px 12px;
-  background: rgba(94, 234, 212, 0.08);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+}
+.oa-eyebrow::before {
+  content: "";
+  display: inline-block;
+  width: 32px;
+  height: 1px;
+  background: var(--sig);
+  opacity: 0.6;
 }
 
-.oa-hero h1 {
+.oa-h1 {
+  font-family: var(--disp) !important;
+  font-size: clamp(56px, 9vw, 128px);
+  font-weight: 800;
+  line-height: 0.86;
+  letter-spacing: -0.055em;
+  color: var(--text);
+  margin-bottom: 28px;
+}
+.oa-h1 .hi { color: var(--sig); }
+.oa-h1 .lo { color: var(--bad); }
+
+.oa-lead {
+  max-width: 640px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--muted);
+  margin-bottom: 52px;
+}
+
+/* ── hero SVG wrapper ─────────────────────────────────────────── */
+.oa-hero-svg {
   position: relative;
-  z-index: 1;
-  max-width: 980px;
-  margin: 18px 0 8px;
-  color: var(--oa-text);
-  font-family: "Space Grotesk", "IBM Plex Sans", system-ui, sans-serif;
-  font-size: clamp(44px, 7vw, 84px);
-  line-height: 0.91;
-  letter-spacing: -0.065em;
+  width: 100%;
+  margin-bottom: 0;
 }
-
-.oa-hero-content {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 0.92fr) minmax(420px, 1.08fr);
-  gap: 28px;
-  align-items: center;
-}
-
-.oa-hero-copy {
-  min-width: 0;
-}
-
-.oa-hero-visual {
-  position: relative;
-  overflow: hidden;
-  min-height: 430px;
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  border-radius: 28px;
-  background:
-    radial-gradient(circle at 50% 18%, rgba(94, 234, 212, 0.18), transparent 28%),
-    radial-gradient(circle at 78% 72%, rgba(251, 113, 133, 0.14), transparent 32%),
-    rgba(2, 6, 23, 0.38);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 28px 90px rgba(0,0,0,0.28);
-}
-
-.oa-hero-visual svg,
-.oa-live-map svg {
+.oa-hero-svg svg {
   width: 100%;
   height: auto;
   display: block;
+  overflow: visible;
 }
 
-.oa-svg-label {
-  font-family: "Space Grotesk", "IBM Plex Sans", system-ui, sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-
-.oa-svg-small {
-  font-family: "IBM Plex Sans", system-ui, sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-@keyframes oaPacketClean {
-  0% { offset-distance: 0%; opacity: 0; }
-  8% { opacity: 1; }
-  78% { opacity: 1; }
-  100% { offset-distance: 100%; opacity: 0; }
-}
-
-@keyframes oaPacketBad {
-  0% { offset-distance: 0%; opacity: 0; transform: scale(0.8); }
-  15% { opacity: 1; }
-  54% { opacity: 1; transform: scale(1); }
-  64% { opacity: 0.15; transform: scale(0.35); }
-  100% { offset-distance: 100%; opacity: 0; }
-}
-
-@keyframes oaScan {
-  0%, 100% { transform: translateX(-30px); opacity: 0.25; }
-  50% { transform: translateX(42px); opacity: 0.9; }
-}
-
-@keyframes oaPulse {
-  0%, 100% { opacity: 0.32; transform: scale(0.96); }
-  50% { opacity: 0.92; transform: scale(1.04); }
-}
-
-@keyframes oaDash {
-  to { stroke-dashoffset: -42; }
-}
-
-@keyframes oaReveal {
-  0%, 38% { opacity: 0; transform: translateY(8px); }
-  46%, 100% { opacity: 1; transform: translateY(0); }
-}
-
-.oa-clean-packet {
-  offset-path: path("M82 230 C190 128 294 126 402 230 S612 332 722 230");
-  animation: oaPacketClean 4.8s linear infinite;
-}
-
-.oa-bad-packet {
-  offset-path: path("M82 230 C190 128 294 126 402 230 S612 332 722 230");
-  animation: oaPacketBad 4.8s linear infinite;
-  animation-delay: 1.1s;
-}
-
-.oa-scan-beam {
-  transform-origin: center;
-  animation: oaScan 2.2s ease-in-out infinite;
-}
-
-.oa-pulse {
-  transform-origin: center;
-  animation: oaPulse 1.7s ease-in-out infinite;
-}
-
-.oa-dashed-flow {
-  stroke-dasharray: 10 12;
-  animation: oaDash 1.8s linear infinite;
-}
-
-.oa-reveal {
-  animation: oaReveal 4.8s ease-in-out infinite;
-}
-
-.oa-live-map {
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 28px;
-  padding: 10px;
-  margin-bottom: 14px;
-  background:
-    linear-gradient(135deg, rgba(94, 234, 212, 0.08), transparent 34%),
-    rgba(2, 6, 23, 0.30);
-  box-shadow: 0 22px 70px rgba(0,0,0,0.18);
-}
-
-.oa-subtitle {
-  position: relative;
-  z-index: 1;
-  max-width: 920px;
-  margin: 0;
-  color: #c9d8ec;
-  font-size: clamp(17px, 2vw, 22px);
-  line-height: 1.45;
-}
-
-.oa-hero-grid {
-  position: relative;
-  z-index: 1;
+/* ── stat row ─────────────────────────────────────────────────── */
+.oa-stats {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 26px;
+  grid-template-columns: repeat(5, 1fr);
 }
-
-.oa-proof-card,
-.oa-step-card,
-.oa-panel,
-.oa-control-panel {
-  border: 1px solid var(--oa-line);
-  border-radius: 22px;
-  background: var(--oa-panel);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
-}
-
-.oa-proof-card {
-  min-height: 138px;
-  padding: 18px;
-}
-
-.oa-proof-card b {
-  display: block;
-  margin-bottom: 8px;
-  color: var(--oa-text);
-  font-size: 15px;
-}
-
-.oa-proof-card span {
-  color: var(--oa-muted);
-  font-size: 13px;
-  line-height: 1.45;
-}
-
-.oa-section {
-  margin: 18px 0;
-}
-
-.oa-section-head {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 12px;
-}
-
-.oa-section-title {
-  margin: 0;
-  color: var(--oa-text);
-  font-family: "Space Grotesk", "IBM Plex Sans", system-ui, sans-serif;
-  font-size: 24px;
-  letter-spacing: -0.03em;
-}
-
-.oa-section-copy {
-  max-width: 780px;
-  margin: 4px 0 0;
-  color: var(--oa-muted);
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.oa-how {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.oa-step-card {
-  padding: 16px;
-}
-
-.oa-step-num {
-  display: inline-flex;
-  width: 28px;
-  height: 28px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  background: rgba(94, 234, 212, 0.12);
-  color: var(--oa-cyan);
-  font-weight: 800;
-}
-
-.oa-step-card b {
-  display: block;
-  margin: 12px 0 6px;
-  color: var(--oa-text);
-  font-size: 14px;
-}
-
-.oa-step-card span {
-  color: var(--oa-muted);
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.oa-control-panel {
-  padding: 18px;
-  background:
-    linear-gradient(135deg, rgba(96, 165, 250, 0.08), transparent 38%),
-    var(--oa-panel-strong);
-}
-
-.oa-callout {
-  border: 1px solid rgba(94, 234, 212, 0.24);
-  border-radius: 18px;
-  padding: 14px 16px;
-  margin-bottom: 14px;
-  color: #d9fff8;
-  background: rgba(94, 234, 212, 0.08);
-}
-
-.oa-callout b {
-  color: var(--oa-cyan);
-}
-
-.oa-status-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
 .oa-stat {
-  border: 1px solid var(--oa-line);
-  border-radius: 18px;
-  padding: 14px;
-  background: rgba(15, 23, 42, 0.62);
+  padding: 22px 28px;
+  border-right: 1px solid rgba(0,255,170,0.08);
+  border-top: 1px solid rgba(0,255,170,0.1);
+  border-bottom: 1px solid rgba(0,255,170,0.1);
 }
-
-.oa-stat span {
+.oa-stat:last-child { border-right: none; }
+.oa-stat-lbl {
   display: block;
-  color: var(--oa-dim);
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 8px;
 }
-
-.oa-stat b {
+.oa-stat-val {
   display: block;
-  margin-top: 6px;
-  color: var(--oa-text);
-  font-size: 18px;
+  font-family: var(--disp) !important;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--text);
 }
+.oa-stat-val.g { color: var(--sig); }
+.oa-stat-val.r { color: var(--bad); }
+.oa-stat-val.w { color: var(--warn); }
 
-.oa-pipeline {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(170px, 1fr));
-  gap: 12px;
-  align-items: stretch;
-}
-
-.oa-worker {
+/* ── section wrapper ──────────────────────────────────────────── */
+.oa-section {
+  padding: 40px 56px;
   position: relative;
-  overflow: hidden;
-  min-height: 264px;
-  border: 1px solid var(--oa-line);
-  border-radius: 24px;
-  padding: 16px;
-  background: rgba(12, 23, 39, 0.92);
+}
+.oa-section-rule {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,255,170,0.14), transparent);
+  margin: 0 56px;
+}
+.oa-section-title {
+  font-family: var(--disp) !important;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.oa-section-copy {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  max-width: 640px;
 }
 
-.oa-worker:before {
+/* ── how-to steps ─────────────────────────────────────────────── */
+.oa-steps {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  border: 1px solid rgba(0,255,170,0.1);
+  border-radius: var(--r);
+  overflow: hidden;
+  gap: 1px;
+  background: rgba(0,255,170,0.06);
+}
+.oa-step {
+  padding: 22px 18px;
+  background: var(--deep);
+}
+.oa-step-n {
+  font-family: var(--disp) !important;
+  font-size: 58px;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  color: rgba(0,255,170,0.1);
+  line-height: 1;
+  margin-bottom: 12px;
+}
+.oa-step-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sig);
+  margin-bottom: 8px;
+}
+.oa-step-body {
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+/* ── live node grid ───────────────────────────────────────────── */
+.oa-nodes {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+.oa-node {
+  position: relative;
+  border: 1px solid rgba(0,255,170,0.15);
+  border-radius: var(--r);
+  padding: 16px 14px 14px;
+  background: var(--panel);
+  overflow: hidden;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.oa-node::before {
   content: "";
   position: absolute;
-  inset: 0 0 auto 0;
-  height: 5px;
-  background: var(--oa-dim);
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--idle);
+  transition: background 0.3s;
 }
+.oa-node.working::before  { background: var(--wire); }
+.oa-node.completed::before{ background: var(--sig); }
+.oa-node.approved::before { background: var(--warn); }
+.oa-node.redirected::before{ background: #a78bfa; }
 
-.oa-worker.working:before { background: var(--oa-blue); }
-.oa-worker.completed:before { background: var(--oa-green); }
-.oa-worker.approved:before { background: var(--oa-amber); }
-.oa-worker.idle:before { background: #64748b; }
-.oa-worker.redirected:before { background: var(--oa-violet); }
-.oa-worker.suspicious { box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.34), 0 20px 48px rgba(251, 191, 36, 0.10); }
-.oa-worker.suspicious:before { background: var(--oa-amber); }
-.oa-worker.exposed { box-shadow: 0 0 0 1px rgba(251, 113, 133, 0.45), 0 20px 55px rgba(251, 113, 133, 0.14); }
-.oa-worker.exposed:before { background: var(--oa-red); }
-.oa-worker.truth-fail { border-color: rgba(251, 113, 133, 0.55); }
-.oa-worker.truth-clean { border-color: rgba(52, 211, 153, 0.40); }
-
-.oa-worker-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
+.oa-node.hot {
+  border-color: rgba(245,166,35,0.45);
+  box-shadow: 0 0 22px rgba(245,166,35,0.12);
+  animation: hotPulse 2s ease-in-out infinite;
 }
+.oa-node.hot::before { background: var(--warn); }
 
-.oa-worker-id {
-  color: var(--oa-text);
-  font-family: "Space Grotesk", "IBM Plex Sans", system-ui, sans-serif;
-  font-size: 30px;
+.oa-node.exposed {
+  border-color: rgba(255,51,88,0.55);
+  box-shadow: 0 0 28px rgba(255,51,88,0.14);
+}
+.oa-node.exposed::before { background: var(--bad); animation: redFlash 0.9s ease-in-out infinite; }
+
+.oa-node.truth-fail { border-color: rgba(255,51,88,0.5); }
+.oa-node.truth-clean { border-color: rgba(0,255,170,0.35); }
+
+.oa-node-id {
+  font-family: var(--disp) !important;
+  font-size: 46px;
   font-weight: 800;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.06em;
+  color: var(--text);
+  line-height: 1;
+  margin-bottom: 3px;
 }
-
-.oa-badge {
-  display: inline-flex;
-  border: 1px solid rgba(148, 163, 184, 0.20);
-  border-radius: 999px;
-  padding: 5px 9px;
-  color: #dbeafe;
-  background: rgba(96, 165, 250, 0.10);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.oa-badge.warn { color: #fff3c4; background: rgba(251, 191, 36, 0.14); border-color: rgba(251, 191, 36, 0.28); }
-.oa-badge.danger { color: #ffe4e9; background: rgba(251, 113, 133, 0.16); border-color: rgba(251, 113, 133, 0.30); }
-.oa-badge.good { color: #d6fff0; background: rgba(52, 211, 153, 0.14); border-color: rgba(52, 211, 153, 0.28); }
-.oa-badge.dim { color: #cbd5e1; background: rgba(100, 116, 139, 0.16); }
-
-.oa-role {
-  color: var(--oa-cyan);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.oa-task {
-  margin-top: 6px;
-  color: #dbeafe;
-  font-size: 14px;
+.oa-node-role {
+  font-size: 8.5px;
   font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sig);
+  margin-bottom: 10px;
 }
-
-.oa-desc {
-  min-height: 54px;
-  margin-top: 8px;
-  color: var(--oa-muted);
-  font-size: 12px;
-  line-height: 1.42;
+.oa-node-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 2px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid var(--dim);
+  color: var(--muted);
+  margin-bottom: 10px;
 }
+.oa-node-badge.g { border-color: rgba(0,255,170,0.35); color: var(--sig); background: rgba(0,255,170,0.07); }
+.oa-node-badge.r { border-color: rgba(255,51,88,0.4); color: var(--bad); background: rgba(255,51,88,0.08); }
+.oa-node-badge.w { border-color: rgba(245,166,35,0.4); color: var(--warn); background: rgba(245,166,35,0.08); }
+.oa-node-badge.b { border-color: rgba(34,211,255,0.35); color: var(--wire); background: rgba(34,211,255,0.07); }
 
-.oa-snippet {
-  min-height: 74px;
-  max-height: 96px;
+.oa-node-task {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.oa-node-desc {
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--dim);
+  margin-bottom: 10px;
+}
+.oa-node-snippet {
+  padding: 9px 10px;
+  background: rgba(0,0,0,0.45);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 3px;
+  font-size: 9.5px;
+  line-height: 1.5;
+  color: rgba(200,230,255,0.45);
+  max-height: 70px;
   overflow: hidden;
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  border-radius: 16px;
-  padding: 11px;
-  margin-top: 12px;
-  color: #d9e7fa;
-  background: rgba(2, 6, 23, 0.42);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 11px;
-  line-height: 1.42;
   white-space: pre-wrap;
+  word-break: break-all;
+  margin-bottom: 10px;
 }
-
-.oa-worker-foot {
+.oa-node-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 12px;
+  gap: 5px;
 }
+.oa-tag {
+  font-size: 9px;
+  padding: 3px 7px;
+  border: 1px solid var(--dim);
+  border-radius: 2px;
+  color: var(--muted);
+}
+.oa-tag.hot { border-color: rgba(245,166,35,0.4); color: var(--warn); }
+.oa-tag.red { border-color: rgba(255,51,88,0.38); color: var(--bad); }
+.oa-tag.grn { border-color: rgba(0,255,170,0.32); color: var(--sig); }
 
-.oa-chip {
-  display: inline-flex;
+/* ── live SVG pipeline bar ────────────────────────────────────── */
+.oa-pipe-bar {
+  margin-bottom: 20px;
+  border: 1px solid rgba(0,255,170,0.1);
+  border-radius: var(--r);
+  overflow: hidden;
+  background: rgba(0,0,0,0.35);
+}
+.oa-pipe-bar svg { display: block; width: 100%; height: auto; }
+
+/* ── console panel ────────────────────────────────────────────── */
+.oa-console {
+  border: 1px solid rgba(0,255,170,0.18);
+  border-radius: var(--r);
+  overflow: hidden;
+  background: var(--panel);
+}
+.oa-console-hdr {
+  display: flex;
   align-items: center;
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  border-radius: 999px;
-  padding: 5px 8px;
-  color: #cbd5e1;
-  background: rgba(15, 23, 42, 0.64);
-  font-size: 11px;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(0,255,170,0.06);
+  border-bottom: 1px solid rgba(0,255,170,0.1);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sig);
 }
-
-.oa-chip.hot {
-  color: #fff3c4;
-  background: rgba(251, 191, 36, 0.12);
-  border-color: rgba(251, 191, 36, 0.26);
+.oa-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--sig);
+  animation: blink 1.4s ease-in-out infinite;
 }
+.oa-dot.r { background: var(--bad); }
+.oa-dot.w { background: var(--warn); }
 
-.oa-chip.red {
-  color: #ffe4e9;
-  background: rgba(251, 113, 133, 0.13);
-  border-color: rgba(251, 113, 133, 0.28);
-}
-
-.oa-chip.green {
-  color: #d6fff0;
-  background: rgba(52, 211, 153, 0.12);
-  border-color: rgba(52, 211, 153, 0.24);
-}
-
-.oa-panel {
-  padding: 16px;
-}
-
-.oa-log {
+/* ── log ──────────────────────────────────────────────────────── */
+.oa-log { font-size: 11px; }
+.oa-log-row {
   display: grid;
+  grid-template-columns: 52px 1fr 72px;
   gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  animation: fadeUp 0.25s ease-out;
+}
+.oa-log-row:last-child { border-bottom: none; }
+.oa-log-n  { color: var(--dim); }
+.oa-log-a  { color: var(--wire); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.oa-log-r  { text-align: right; font-weight: 700; }
+.oa-log-r.p{ color: var(--sig); }
+.oa-log-r.n{ color: var(--bad); }
+.oa-log-sub {
+  grid-column: 2 / 4;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: -4px;
+  padding-bottom: 6px;
+  padding-left: 0;
 }
 
-.oa-log-item {
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  border-radius: 18px;
-  padding: 13px;
-  background: rgba(15, 23, 42, 0.58);
+/* ── reward panel ─────────────────────────────────────────────── */
+.oa-reward-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1px;
+  background: rgba(0,255,170,0.06);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.oa-rcard {
+  padding: 12px 14px;
+  background: var(--deep);
+}
+.oa-rcard-lbl {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+  display: block;
+  margin-bottom: 5px;
+}
+.oa-rcard-val {
+  font-family: var(--disp) !important;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+.oa-rcard-val.p { color: var(--sig); }
+.oa-rcard-val.n { color: var(--bad); }
+.oa-rcard-val.z { color: var(--dim); }
+
+/* ── oracle panel ─────────────────────────────────────────────── */
+.oa-oracle-wrap {
+  border: 1px solid rgba(245,166,35,0.2);
+  border-radius: var(--r);
+  overflow: hidden;
+  background: rgba(245,166,35,0.03);
+}
+.oa-oracle-hdr {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(245,166,35,0.06);
+  border-bottom: 1px solid rgba(245,166,35,0.12);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--warn);
 }
 
-.oa-log-line {
+/* ── post-mortem ──────────────────────────────────────────────── */
+.oa-pm {
+  padding: 0 56px 56px;
+}
+.oa-pm-hdr {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  color: #e6f0ff;
-  font-weight: 700;
+  gap: 16px;
+  padding: 32px 0 20px;
+  border-top: 1px solid rgba(0,255,170,0.12);
 }
-
-.oa-log-meta {
-  margin-top: 8px;
-  color: var(--oa-muted);
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.oa-reward-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.oa-reward-card {
-  border: 1px solid rgba(148, 163, 184, 0.15);
-  border-radius: 16px;
-  padding: 10px;
-  background: rgba(15, 23, 42, 0.64);
-}
-
-.oa-reward-card span {
-  display: block;
-  color: var(--oa-dim);
-  font-size: 10px;
+.oa-pm-title {
+  font-family: var(--disp) !important;
+  font-size: 38px;
   font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: -0.04em;
+  color: var(--text);
 }
-
-.oa-reward-card b {
-  display: block;
-  margin-top: 4px;
-  color: var(--oa-text);
-}
-
-.oa-post-grid {
+.oa-pm-grid {
   display: grid;
-  grid-template-columns: 1.1fr 1fr;
-  gap: 14px;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 16px;
 }
-
 .oa-table {
   width: 100%;
   border-collapse: collapse;
+  font-size: 11px;
+  border-radius: var(--r);
   overflow: hidden;
-  border-radius: 16px;
-  font-size: 12px;
 }
-
-.oa-table th,
-.oa-table td {
-  border-bottom: 1px solid rgba(148, 163, 184, 0.13);
-  padding: 10px 8px;
-  text-align: left;
-  vertical-align: top;
-}
-
 .oa-table th {
-  color: var(--oa-dim);
-  background: rgba(15, 23, 42, 0.68);
+  padding: 10px 14px;
+  text-align: left;
+  background: rgba(0,255,170,0.06);
+  color: var(--dim);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(0,255,170,0.1);
+}
+.oa-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: var(--muted);
+}
+.oa-table td.caught { color: var(--sig); }
+.oa-table td.missed { color: var(--bad); }
+.oa-table td.clean  { color: var(--wire); }
+
+.oa-pm-side {
+  padding: 22px;
+  border: 1px solid rgba(0,255,170,0.12);
+  border-radius: var(--r);
+  background: rgba(0,255,170,0.04);
+}
+
+/* ── verdict badge ────────────────────────────────────────────── */
+.oa-verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 3px;
   font-size: 10px;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
+.oa-verdict.clean  { background: rgba(0,255,170,0.12); border: 1px solid rgba(0,255,170,0.35); color: var(--sig); }
+.oa-verdict.dirty  { background: rgba(255,51,88,0.1);  border: 1px solid rgba(255,51,88,0.35);  color: var(--bad); }
+.oa-verdict.timeout{ background: rgba(245,166,35,0.1); border: 1px solid rgba(245,166,35,0.35); color: var(--warn); }
 
-.oa-table td {
-  color: #dbeafe;
-  background: rgba(15, 23, 42, 0.36);
-}
-
-.oa-oracle {
-  border: 1px solid rgba(167, 139, 250, 0.28);
-  border-radius: 22px;
-  padding: 16px;
-  background: rgba(167, 139, 250, 0.08);
-}
-
+/* ── empty state ──────────────────────────────────────────────── */
 .oa-empty {
-  border: 1px dashed rgba(148, 163, 184, 0.24);
-  border-radius: 20px;
-  padding: 20px;
-  color: var(--oa-muted);
+  padding: 28px 20px;
   text-align: center;
-  background: rgba(15, 23, 42, 0.36);
+  font-size: 12px;
+  color: var(--dim);
+  border: 1px dashed rgba(0,255,170,0.12);
+  border-radius: var(--r);
 }
 
-.obs-text textarea,
-.act-text textarea {
-  color: #dbeafe !important;
-  background: rgba(2, 6, 23, 0.72) !important;
-  border: 1px solid rgba(148, 163, 184, 0.22) !important;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
-  font-size: 12px !important;
-  line-height: 1.48 !important;
+/* ── Gradio override ──────────────────────────────────────────── */
+.obs-text textarea, .act-text textarea {
+  background: rgba(0,0,0,0.6) !important;
+  border: 1px solid rgba(0,255,170,0.18) !important;
+  border-radius: 3px !important;
+  color: rgba(210,240,255,0.85) !important;
+  font-family: var(--mono) !important;
+  font-size: 11.5px !important;
+  line-height: 1.55 !important;
+  padding: 14px !important;
+}
+.act-text textarea { color: var(--sig) !important; }
+
+button[class*="primary"], .gr-button-primary {
+  background: var(--sig) !important;
+  color: #000 !important;
+  border: none !important;
+  border-radius: var(--r) !important;
+  font-family: var(--mono) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  transition: opacity 0.15s !important;
+}
+button[class*="primary"]:hover { opacity: 0.85 !important; }
+
+button[class*="secondary"], .gr-button-secondary {
+  background: transparent !important;
+  color: var(--sig) !important;
+  border: 1px solid rgba(0,255,170,0.28) !important;
+  border-radius: var(--r) !important;
+  font-family: var(--mono) !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
 }
 
-button.primary,
-.gr-button-primary {
-  background: linear-gradient(135deg, #14b8a6, #2563eb) !important;
-  border: 0 !important;
-  color: white !important;
-  font-weight: 800 !important;
+/* ── SVG animation classes ────────────────────────────────────── */
+@keyframes flowPkt {
+  0%   { offset-distance: 0%;   opacity: 0; }
+  6%   { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+@keyframes badPkt {
+  0%   { offset-distance: 0%;  opacity: 0;   transform: scale(1); }
+  8%   { opacity: 1; }
+  50%  { opacity: 1;  transform: scale(1); }
+  60%  { transform: scale(2.2); opacity: 0.5; }
+  68%  { transform: scale(0.1); opacity: 0; }
+  100% { offset-distance: 62%; opacity: 0; }
+}
+@keyframes dashScroll {
+  to { stroke-dashoffset: -40; }
+}
+@keyframes glitchSurface {
+  0%,80%,100% { filter: none; transform: none; clip-path: none; }
+  82% { transform: translate(-3px, 1px); filter: hue-rotate(100deg) saturate(3) brightness(1.4); }
+  85% { transform: translate(3px,-2px); clip-path: polygon(0 18%,100% 18%,100% 46%,0 46%); filter: none; }
+  88% { transform: translate(-1px,0); }
+}
+@keyframes scanArc {
+  0%,100% { opacity: 0.2; transform: scale(0.92); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+@keyframes popReveal {
+  0%,35% { opacity: 0; transform: translateY(14px) scale(0.88); }
+  48%,88%{ opacity: 1; transform: translateY(0) scale(1); }
+  98%,100%{ opacity: 0; transform: translateY(-8px) scale(0.94); }
+}
+@keyframes hotPulse {
+  0%,100%{ box-shadow: 0 0 0 0 rgba(245,166,35,0); }
+  50%    { box-shadow: 0 0 20px 4px rgba(245,166,35,0.18); }
+}
+@keyframes redFlash {
+  0%,100%{ background: var(--bad); }
+  50%    { background: rgba(255,51,88,0.25); }
+}
+@keyframes blink {
+  0%,100%{ opacity: 1; }
+  50%    { opacity: 0.25; }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes heroIn {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-button.secondary,
-.gr-button-secondary {
-  background: rgba(15, 23, 42, 0.74) !important;
-  border: 1px solid rgba(148, 163, 184, 0.22) !important;
-  color: #e2e8f0 !important;
+.pkt-clean {
+  offset-path: path("M72 182 L1160 182");
+  animation: flowPkt 3.4s linear infinite;
 }
-
-@media (max-width: 1180px) {
-  .oa-hero-content {
-    grid-template-columns: 1fr;
-  }
-
-  .oa-hero-visual {
-    min-height: 0;
-  }
-
-  .oa-hero-grid,
-  .oa-how,
-  .oa-status-grid,
-  .oa-pipeline {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.pkt-bad {
+  offset-path: path("M72 182 L1160 182");
+  animation: badPkt 3.4s linear infinite;
+  animation-delay: 1.5s;
 }
+.dash-flow {
+  stroke-dasharray: 12 14;
+  animation: dashScroll 1.8s linear infinite;
+}
+.glitch-node {
+  animation: glitchSurface 5s ease-in-out infinite;
+  animation-delay: 0.8s;
+}
+.scan-ring {
+  transform-origin: 50% 50%;
+  animation: scanArc 2s ease-in-out infinite;
+}
+.pop-reveal {
+  animation: popReveal 3.4s ease-in-out infinite;
+  animation-delay: 1.2s;
+}
+.hero-in { animation: heroIn 0.8s ease-out both; }
+.hero-in-2 { animation: heroIn 0.8s 0.15s ease-out both; }
+.hero-in-3 { animation: heroIn 0.8s 0.3s ease-out both; }
 
-@media (max-width: 760px) {
-  .oa-hero {
-    padding: 22px;
-    border-radius: 22px;
-  }
-  .oa-hero-grid,
-  .oa-how,
-  .oa-status-grid,
-  .oa-pipeline,
-  .oa-post-grid,
-  .oa-reward-grid {
-    grid-template-columns: 1fr;
-  }
+/* ── responsive ───────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .oa-nodes, .oa-stats, .oa-steps { grid-template-columns: repeat(2,1fr); }
+  .oa-pm-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 680px) {
+  .oa-nodes, .oa-stats, .oa-steps, .oa-reward-grid { grid-template-columns: 1fr; }
+  .oa-hero, .oa-section, .oa-pm { padding-left: 20px; padding-right: 20px; }
 }
 """
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  Constants
+# ─────────────────────────────────────────────────────────────────────────────
+
 WORKER_ROLES = {
-    1: "Requirement Analyst",
-    2: "Coding Agent",
-    3: "Test Generator",
-    4: "Security Reviewer",
-    5: "Deployment Approver",
+    1: "Req Analyst",
+    2: "Code Agent",
+    3: "Test Gen",
+    4: "Sec Review",
+    5: "Deploy",
 }
 
-FAILURE_STATES = {
-    "HALLUCINATING",
-    "STALLED",
-    "DRIFTED",
-    "DECEPTIVE",
-    "CORRUPTED",
-}
+FAILURE_STATES = {"HALLUCINATING", "STALLED", "DRIFTED", "DECEPTIVE", "CORRUPTED"}
 
 REWARD_LABELS = {
-    "reward_catch": "Failure catch",
-    "reward_deceptive_catch": "Deception catch",
-    "penalty_false_positive": "False positive",
-    "penalty_hallpass": "Bad approval",
-    "penalty_deceptive_pass": "Deception missed",
-    "reward_efficiency": "Efficiency",
-    "reward_collusion": "Collusion",
-    "penalty_format": "Format",
-    "reward_mercor": "Reasoning",
+    "reward_catch":          "Failure catch",
+    "reward_deceptive_catch":"Deception catch",
+    "penalty_false_positive":"False positive",
+    "penalty_hallpass":      "Bad approval",
+    "penalty_deceptive_pass":"Deception missed",
+    "reward_efficiency":     "Efficiency",
+    "reward_collusion":      "Collusion",
+    "penalty_format":        "Format",
+    "reward_mercor":         "Reasoning",
 }
 
 
-def _esc(value: Any) -> str:
-    return html.escape(str(value), quote=True)
+# ─────────────────────────────────────────────────────────────────────────────
+#  Utilities
+# ─────────────────────────────────────────────────────────────────────────────
 
+def _esc(v: Any) -> str:
+    return html.escape(str(v), quote=True)
 
-def _clip(value: str, limit: int = 190) -> str:
-    value = " ".join((value or "").split())
-    return value if len(value) <= limit else value[: limit - 1] + "..."
+def _clip(v: str, lim: int = 180) -> str:
+    v = " ".join((v or "").split())
+    return v if len(v) <= lim else v[:lim - 1] + "…"
 
+def _format_action(verb: str, wid: int | str, reason: str = "") -> str:
+    r = reason.strip() or "Checking this worker before acting."
+    return f"{verb} {wid}\n<reasoning>{r}</reasoning>"
 
-def _format_action(verb: str, worker_id: int | str, reason: str = "") -> str:
-    reason = reason.strip() or "I am checking this worker before advancing the pipeline."
-    return f"{verb} {worker_id}\n<reasoning>{reason}</reasoning>"
-
-
-def _redirect_action(worker_id: int | str, instruction: str) -> str:
-    clean_instruction = instruction.strip() or "Refocus on the original task and produce only the requested output."
-    return (
-        f"REDIRECT {worker_id} {clean_instruction}\n"
-        "<reasoning>The worker appears off-target, so a soft reset is safer than approving.</reasoning>"
-    )
-
+def _redirect_action(wid: int | str, instruction: str) -> str:
+    instr = instruction.strip() or "Refocus on the original task."
+    return f"REDIRECT {wid} {instr}\n<reasoning>Worker appears off-task; soft reset preferred.</reasoning>"
 
 def _display_total(state: dict[str, Any]) -> float:
-    breakdown = state.get("reward_breakdown", {}) or {}
+    bd = state.get("reward_breakdown") or {}
     if state.get("episode_result") == "IN_PROGRESS":
-        return float(sum(breakdown.values()))
-    return float(state.get("total_reward", sum(breakdown.values())) or 0.0)
+        return float(sum(bd.values()))
+    return float(state.get("total_reward", sum(bd.values())) or 0.0)
 
 
-def hero_svg_html() -> str:
+# ─────────────────────────────────────────────────────────────────────────────
+#  Hero HTML — animated SVG pipeline concept
+# ─────────────────────────────────────────────────────────────────────────────
+
+def hero_html() -> str:
     return """
-    <div class="oa-hero-visual" aria-label="Animated oversight flow">
-      <svg viewBox="0 0 804 430" role="img">
-        <defs>
-          <linearGradient id="oaNode" x1="0" x2="1">
-            <stop offset="0%" stop-color="#10243d"/>
-            <stop offset="100%" stop-color="#0b1727"/>
-          </linearGradient>
-          <linearGradient id="oaScanGrad" x1="0" x2="1">
-            <stop offset="0%" stop-color="#5eead4" stop-opacity="0"/>
-            <stop offset="50%" stop-color="#5eead4" stop-opacity="0.9"/>
-            <stop offset="100%" stop-color="#5eead4" stop-opacity="0"/>
-          </linearGradient>
-          <filter id="oaGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="7" result="blur"/>
-            <feMerge>
-              <feMergeNode in="blur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>
+<div class="oa-hero oa-root">
+  <div class="oa-eyebrow hero-in">real environment · no fake demos · deterministic + seedable</div>
 
-        <rect x="0" y="0" width="804" height="430" rx="26" fill="rgba(2,6,23,0.24)"/>
-        <path d="M82 230 C190 128 294 126 402 230 S612 332 722 230"
-              fill="none" stroke="#5eead4" stroke-opacity="0.24" stroke-width="8"/>
-        <path class="oa-dashed-flow" d="M82 230 C190 128 294 126 402 230 S612 332 722 230"
-              fill="none" stroke="#93c5fd" stroke-opacity="0.50" stroke-width="2"/>
+  <h1 class="oa-h1 hero-in-2">
+    Catch the<br/>
+    failure that<br/>
+    looks <span class="hi">safe.</span>
+  </h1>
 
-        <g transform="translate(38 174)">
-          <rect width="104" height="112" rx="22" fill="url(#oaNode)" stroke="#334155"/>
-          <text x="52" y="43" text-anchor="middle" fill="#e2e8f0" class="oa-svg-label" font-size="27">W1</text>
-          <text x="52" y="69" text-anchor="middle" fill="#9fb0c6" class="oa-svg-small">REQS</text>
+  <p class="oa-lead hero-in-3">
+    Five deterministic AI workers run a software-delivery pipeline.
+    One produces output that looks clean on the surface — but hides a flaw
+    only revealed by deliberate deep inspection.
+    Can a supervisor LLM learn when to look deeper?
+  </p>
+
+  <div class="oa-hero-svg">
+    <svg viewBox="0 0 1240 360" aria-label="Animated oversight pipeline" role="img">
+      <defs>
+        <filter id="glow0">
+          <feGaussianBlur stdDeviation="5" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow1">
+          <feGaussianBlur stdDeviation="11" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <radialGradient id="scanGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"   stop-color="#00ffaa" stop-opacity="0.28"/>
+          <stop offset="100%" stop-color="#00ffaa" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="badGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"   stop-color="#ff3358" stop-opacity="0.25"/>
+          <stop offset="100%" stop-color="#ff3358" stop-opacity="0"/>
+        </radialGradient>
+        <pattern id="hdots" x="0" y="0" width="52" height="52" patternUnits="userSpaceOnUse">
+          <circle cx="26" cy="26" r="1.2" fill="rgba(0,255,170,0.07)"/>
+        </pattern>
+      </defs>
+
+      <!-- background dot grid -->
+      <rect width="1240" height="360" fill="url(#hdots)"/>
+
+      <!-- pipeline backbone -->
+      <line x1="80" y1="182" x2="1160" y2="182"
+            stroke="rgba(0,255,170,0.1)" stroke-width="8" stroke-linecap="round"/>
+      <!-- animated dashes -->
+      <line class="dash-flow" x1="80" y1="182" x2="1160" y2="182"
+            stroke="#22d3ff" stroke-opacity="0.45" stroke-width="2.5"
+            fill="none" stroke-dasharray="12 14"/>
+
+      <!-- ── W1 ── -->
+      <g transform="translate(38 122)">
+        <rect width="120" height="120" rx="4"
+              fill="rgba(6,12,24,0.97)" stroke="#22d3ff" stroke-width="1.5"/>
+        <rect x="0" y="0" width="120" height="3" rx="4" fill="#22d3ff"/>
+        <text x="60" y="52" text-anchor="middle"
+              fill="#dceeff" font-family="Syne,sans-serif"
+              font-size="38" font-weight="800" letter-spacing="-2">W1</text>
+        <text x="60" y="74" text-anchor="middle"
+              fill="#22d3ff" font-family="'JetBrains Mono',monospace"
+              font-size="8.5" font-weight="700" letter-spacing="2.5">REQ ANALYST</text>
+        <text x="60" y="96" text-anchor="middle"
+              fill="#2d4156" font-family="'JetBrains Mono',monospace"
+              font-size="8.5" letter-spacing="1.5">WORKING</text>
+      </g>
+
+      <!-- ── W2 ── -->
+      <g transform="translate(258 122)">
+        <rect width="120" height="120" rx="4"
+              fill="rgba(6,12,24,0.97)" stroke="#22d3ff" stroke-width="1.5"/>
+        <rect x="0" y="0" width="120" height="3" rx="4" fill="#22d3ff"/>
+        <text x="60" y="52" text-anchor="middle"
+              fill="#dceeff" font-family="Syne,sans-serif"
+              font-size="38" font-weight="800" letter-spacing="-2">W2</text>
+        <text x="60" y="74" text-anchor="middle"
+              fill="#22d3ff" font-family="'JetBrains Mono',monospace"
+              font-size="8.5" font-weight="700" letter-spacing="2.5">CODE GEN</text>
+        <text x="60" y="96" text-anchor="middle"
+              fill="#2d4156" font-family="'JetBrains Mono',monospace"
+              font-size="8.5" letter-spacing="1.5">WORKING</text>
+      </g>
+
+      <!-- ── W3 DECEPTIVE — green surface with hidden red interior ── -->
+      <g transform="translate(478 104)">
+        <!-- Red interior glow (always visible slightly) -->
+        <circle cx="60" cy="78" r="68" fill="url(#badGrad)"/>
+        <rect width="120" height="156" rx="4"
+              fill="rgba(20,6,14,0.98)" stroke="rgba(255,51,88,0.3)" stroke-width="1.5"/>
+
+        <!-- Green surface overlay — glitches -->
+        <g class="glitch-node">
+          <rect width="120" height="156" rx="4"
+                fill="rgba(6,12,24,0.97)" stroke="#22d3ff" stroke-width="1.5"/>
+          <rect x="0" y="0" width="120" height="3" rx="4" fill="#22d3ff"/>
+          <text x="60" y="52" text-anchor="middle"
+                fill="#dceeff" font-family="Syne,sans-serif"
+                font-size="38" font-weight="800" letter-spacing="-2">W3</text>
+          <text x="60" y="74" text-anchor="middle"
+                fill="#22d3ff" font-family="'JetBrains Mono',monospace"
+                font-size="8.5" font-weight="700" letter-spacing="2.5">TEST GEN</text>
+          <text x="60" y="96" text-anchor="middle"
+                fill="#2d4156" font-family="'JetBrains Mono',monospace"
+                font-size="8.5" letter-spacing="1.5">WORKING</text>
+          <!-- Hidden flaw row (red) -->
+          <rect x="8" y="112" width="104" height="34" rx="3"
+                fill="rgba(255,51,88,0.13)" stroke="rgba(255,51,88,0.4)" stroke-width="1"/>
+          <text x="60" y="126" text-anchor="middle"
+                fill="#ff3358" font-family="'JetBrains Mono',monospace"
+                font-size="8" font-weight="700" letter-spacing="1.5">HIDDEN FLAW</text>
+          <text x="60" y="138" text-anchor="middle"
+                fill="rgba(255,51,88,0.55)" font-family="'JetBrains Mono',monospace"
+                font-size="7.5">missing tenant isolation</text>
         </g>
-        <g transform="translate(188 78)">
-          <rect width="104" height="112" rx="22" fill="url(#oaNode)" stroke="#334155"/>
-          <text x="52" y="43" text-anchor="middle" fill="#e2e8f0" class="oa-svg-label" font-size="27">W2</text>
-          <text x="52" y="69" text-anchor="middle" fill="#9fb0c6" class="oa-svg-small">CODE</text>
-        </g>
-        <g transform="translate(350 174)">
-          <rect width="104" height="112" rx="22" fill="#12233a" stroke="#fbbf24" stroke-width="2"/>
-          <text x="52" y="42" text-anchor="middle" fill="#fff7d6" class="oa-svg-label" font-size="27">W3</text>
-          <text x="52" y="68" text-anchor="middle" fill="#fbbf24" class="oa-svg-small">LOOKS CLEAN</text>
-          <g class="oa-pulse">
-            <circle cx="88" cy="23" r="13" fill="#fb7185" filter="url(#oaGlow)"/>
-            <text x="88" y="27" text-anchor="middle" fill="#24040a" font-size="15" font-weight="900">!</text>
-          </g>
-          <rect class="oa-scan-beam" x="14" y="10" width="20" height="92" rx="10" fill="url(#oaScanGrad)"/>
-        </g>
-        <g transform="translate(512 270)">
-          <rect width="104" height="112" rx="22" fill="url(#oaNode)" stroke="#334155"/>
-          <text x="52" y="43" text-anchor="middle" fill="#e2e8f0" class="oa-svg-label" font-size="27">W4</text>
-          <text x="52" y="69" text-anchor="middle" fill="#9fb0c6" class="oa-svg-small">SECURITY</text>
-        </g>
-        <g transform="translate(662 174)">
-          <rect width="104" height="112" rx="22" fill="url(#oaNode)" stroke="#334155"/>
-          <text x="52" y="43" text-anchor="middle" fill="#e2e8f0" class="oa-svg-label" font-size="27">W5</text>
-          <text x="52" y="69" text-anchor="middle" fill="#9fb0c6" class="oa-svg-small">DEPLOY</text>
-        </g>
+      </g>
 
-        <circle class="oa-clean-packet" r="9" fill="#34d399" filter="url(#oaGlow)"/>
-        <circle class="oa-bad-packet" r="11" fill="#fb7185" filter="url(#oaGlow)"/>
+      <!-- ── W4 ── (dimmed, idle) -->
+      <g transform="translate(698 122)">
+        <rect width="120" height="120" rx="4"
+              fill="rgba(6,12,24,0.97)" stroke="rgba(34,211,255,0.22)" stroke-width="1.5"/>
+        <rect x="0" y="0" width="120" height="3" rx="4" fill="rgba(34,211,255,0.22)"/>
+        <text x="60" y="52" text-anchor="middle"
+              fill="rgba(220,238,255,0.35)" font-family="Syne,sans-serif"
+              font-size="38" font-weight="800" letter-spacing="-2">W4</text>
+        <text x="60" y="74" text-anchor="middle"
+              fill="#2d4156" font-family="'JetBrains Mono',monospace"
+              font-size="8.5" font-weight="700" letter-spacing="2.5">SEC REVIEW</text>
+        <text x="60" y="96" text-anchor="middle"
+              fill="#2d4156" font-family="'JetBrains Mono',monospace"
+              font-size="8.5" letter-spacing="1.5">IDLE</text>
+      </g>
 
-        <g transform="translate(238 320)">
-          <path d="M0 40 C42 -4 98 -4 140 40" fill="none" stroke="#5eead4" stroke-width="4" stroke-linecap="round"/>
-          <circle cx="70" cy="39" r="42" fill="rgba(94,234,212,0.09)" stroke="#5eead4" stroke-opacity="0.5"/>
-          <text x="70" y="34" text-anchor="middle" fill="#d9fff8" class="oa-svg-label" font-size="18">OVERSIGHT</text>
-          <text x="70" y="55" text-anchor="middle" fill="#9fb0c6" font-size="12">spend budget to reveal hidden flaws</text>
-        </g>
+      <!-- ── W5 ── (dimmed, idle) -->
+      <g transform="translate(918 122)">
+        <rect width="120" height="120" rx="4"
+              fill="rgba(6,12,24,0.97)" stroke="rgba(34,211,255,0.13)" stroke-width="1.5"/>
+        <rect x="0" y="0" width="120" height="3" rx="4" fill="rgba(34,211,255,0.13)"/>
+        <text x="60" y="52" text-anchor="middle"
+              fill="rgba(220,238,255,0.22)" font-family="Syne,sans-serif"
+              font-size="38" font-weight="800" letter-spacing="-2">W5</text>
+        <text x="60" y="74" text-anchor="middle"
+              fill="#2d4156" font-family="'JetBrains Mono',monospace"
+              font-size="8.5" font-weight="700" letter-spacing="2.5">DEPLOY</text>
+        <text x="60" y="96" text-anchor="middle"
+              fill="#2d4156" font-family="'JetBrains Mono',monospace"
+              font-size="8.5" letter-spacing="1.5">IDLE</text>
+      </g>
 
-        <g class="oa-reveal" transform="translate(485 36)">
-          <rect width="268" height="82" rx="18" fill="rgba(251,113,133,0.14)" stroke="#fb7185" stroke-opacity="0.58"/>
-          <text x="18" y="30" fill="#ffe4e9" class="oa-svg-label" font-size="18">DEEP_INSPECT reveals:</text>
-          <text x="18" y="55" fill="#fecdd3" font-size="14">green surface hid a security-critical flaw</text>
-        </g>
-      </svg>
-    </div>
-    """
+      <!-- CLEAN packet travelling along pipeline -->
+      <circle class="pkt-clean" r="9" fill="#00ffaa" filter="url(#glow0)"/>
 
+      <!-- BAD packet blocked at W3 -->
+      <circle class="pkt-bad" r="11" fill="#ff3358" filter="url(#glow1)"/>
 
-def pipeline_map_svg(env: OversightArenaEnvironment | None, show_real: bool = False) -> str:
-    if env is None:
-        labels = [("W1", "WAITING"), ("W2", "WAITING"), ("W3", "WAITING"), ("W4", "WAITING"), ("W5", "WAITING")]
-        step_text = "Start simulation"
-        risk = "LOW"
-    else:
-        state = env.state_dict
-        labels = [
-            (f"W{w.get('worker_id')}", str(w.get("visible_state", "IDLE")))
-            for w in state.get("workers", [])
-        ]
-        step_text = f"Step {state.get('step', 0)}/{state.get('max_steps', 25)}"
-        risk = state.get("corruption_risk", "LOW")
+      <!-- Oversight scanner bubble (below W3) -->
+      <g transform="translate(538 292)">
+        <circle r="54" fill="url(#scanGrad)"/>
+        <circle class="scan-ring" r="54" fill="none" stroke="#00ffaa" stroke-width="1.5"/>
+        <text x="0" y="-4" text-anchor="middle"
+              fill="#00ffaa" font-family="'JetBrains Mono',monospace"
+              font-size="10.5" font-weight="700" letter-spacing="3">OVERSIGHT</text>
+        <text x="0" y="14" text-anchor="middle"
+              fill="rgba(0,255,170,0.5)" font-family="'JetBrains Mono',monospace"
+              font-size="8.5">DEEP_INSPECT</text>
+      </g>
+      <!-- Beam line oversight→W3 -->
+      <line x1="538" y1="238" x2="538" y2="262"
+            stroke="#00ffaa" stroke-width="2" stroke-opacity="0.55"
+            stroke-dasharray="4 5" class="scan-ring"/>
 
-    nodes = []
-    positions = [92, 247, 402, 557, 712]
-    compromised_ids: set[int] = set()
-    if env is not None:
-        compromised_ids = {int(k) for k in env.state_dict.get("failure_plan", {}).keys()}
+      <!-- Reward reveal badge -->
+      <g class="pop-reveal" transform="translate(606 50)">
+        <rect x="0" y="0" width="250" height="58" rx="4"
+              fill="rgba(0,255,170,0.11)" stroke="#00ffaa" stroke-width="1.5"/>
+        <text x="16" y="23" fill="#00ffaa"
+              font-family="'JetBrains Mono',monospace"
+              font-size="11.5" font-weight="700" letter-spacing="2">+2.5 REWARD</text>
+        <text x="16" y="43" fill="rgba(0,255,170,0.6)"
+              font-family="'JetBrains Mono',monospace" font-size="10">
+          deception caught via DEEP_INSPECT
+        </text>
+      </g>
 
-    for idx, (wid, visible) in enumerate(labels):
-        worker_num = idx + 1
-        x = positions[idx]
-        color = "#60a5fa"
-        if visible in {"APPROVED", "COMPLETED"}:
-            color = "#34d399"
-        if visible in {"IDLE", "WAITING"}:
-            color = "#64748b"
-        if env is not None:
-            worker = env.state_dict.get("workers", [])[idx]
-            if worker.get("steps_unchanged", 0) >= 2 and visible == "WORKING":
-                color = "#fbbf24"
-            if worker.get("deep_inspect_done") and (worker.get("real_state_str") in FAILURE_STATES):
-                color = "#fb7185"
-        if show_real and worker_num in compromised_ids:
-            color = "#fb7185"
-        nodes.append(
-            f"""
-            <g transform="translate({x - 52} 84)">
-              <rect width="104" height="104" rx="24" fill="rgba(15,23,42,0.92)" stroke="{color}" stroke-width="2.5"/>
-              <circle cx="52" cy="22" r="7" fill="{color}" filter="url(#mapGlow)"/>
-              <text x="52" y="54" text-anchor="middle" fill="#eef6ff" class="oa-svg-label" font-size="26">{_esc(wid)}</text>
-              <text x="52" y="76" text-anchor="middle" fill="#9fb0c6" class="oa-svg-small">{_esc(visible)}</text>
-            </g>
-            """
-        )
-
-    return f"""
-    <div class="oa-live-map" aria-label="Live animated oversight map">
-      <svg viewBox="0 0 804 252" role="img">
-        <defs>
-          <filter id="mapGlow" x="-80%" y="-80%" width="260%" height="260%">
-            <feGaussianBlur stdDeviation="5" result="blur"/>
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-        </defs>
-        <text x="34" y="36" fill="#eef6ff" class="oa-svg-label" font-size="25">Live Oversight Map</text>
-        <text x="34" y="60" fill="#9fb0c6" font-size="13">Bad outputs move downstream unless the supervisor investigates in time.</text>
-        <text x="648" y="38" fill="#5eead4" class="oa-svg-small">{_esc(step_text)}</text>
-        <text x="648" y="60" fill="#fbbf24" class="oa-svg-small">risk: {_esc(risk)}</text>
-        <path d="M92 136 H712" stroke="#334155" stroke-width="8" stroke-linecap="round"/>
-        <path class="oa-dashed-flow" d="M92 136 H712" stroke="#5eead4" stroke-opacity="0.55" stroke-width="3" fill="none"/>
-        <circle class="oa-clean-packet" r="8" fill="#34d399" filter="url(#mapGlow)"
-                style='offset-path:path("M92 136 H712"); animation-duration:3.8s;'/>
-        <circle class="oa-bad-packet" r="10" fill="#fb7185" filter="url(#mapGlow)"
-                style='offset-path:path("M92 136 H712"); animation-duration:3.8s;'/>
-        {''.join(nodes)}
-      </svg>
-    </div>
-    """
+      <!-- Under-node labels -->
+      <text x="98"  y="260" text-anchor="middle" fill="rgba(34,211,255,0.38)"
+            font-family="'JetBrains Mono',monospace" font-size="8.5" letter-spacing="2">CLEAN</text>
+      <text x="318" y="260" text-anchor="middle" fill="rgba(34,211,255,0.38)"
+            font-family="'JetBrains Mono',monospace" font-size="8.5" letter-spacing="2">CLEAN</text>
+      <text x="538" y="260" text-anchor="middle" fill="#ff3358"
+            font-family="'JetBrains Mono',monospace" font-size="8.5"
+            font-weight="700" letter-spacing="2">DECEPTIVE ↑</text>
+      <text x="758" y="260" text-anchor="middle" fill="#2d4156"
+            font-family="'JetBrains Mono',monospace" font-size="8.5" letter-spacing="2">IDLE</text>
+      <text x="978" y="260" text-anchor="middle" fill="#2d4156"
+            font-family="'JetBrains Mono',monospace" font-size="8.5" letter-spacing="2">IDLE</text>
+    </svg>
+  </div>
+</div>
+"""
 
 
-def landing_html() -> str:
-    return """
-    <div class="oa-wrap">
-      <section class="oa-hero">
-        <div class="oa-hero-content">
-          <div class="oa-hero-copy">
-            <div class="oa-kicker">Multi-agent oversight benchmark</div>
-            <h1>Catch the failure that looks safe.</h1>
-            <p class="oa-subtitle">
-              Oversight Arena turns the core danger of agent fleets into a visual,
-              playable environment: a worker can look green, hide a flaw, and poison
-              every downstream agent unless the supervisor knows when to inspect.
-            </p>
-          </div>
-          """ + hero_svg_html() + """
-        </div>
-        <div class="oa-hero-grid">
-          <div class="oa-proof-card">
-            <b>The problem</b>
-            <span>Agent pipelines can ship bad code, weak tests, or unsafe approvals while every individual step looks green.</span>
-          </div>
-          <div class="oa-proof-card">
-            <b>Why deception matters</b>
-            <span>Some workers show polished surface outputs. Only deliberate deep inspection reveals the flaw.</span>
-          </div>
-          <div class="oa-proof-card">
-            <b>What oversight means</b>
-            <span>The supervisor decides when to observe, inspect, redirect, terminate, or approve under a step budget.</span>
-          </div>
-          <div class="oa-proof-card">
-            <b>Why this is useful</b>
-            <span>Episodes are deterministic, seedable, and reward-shaped for training scalable oversight agents.</span>
-          </div>
-        </div>
-      </section>
-    </div>
-    """
+# ─────────────────────────────────────────────────────────────────────────────
+#  How-to steps
+# ─────────────────────────────────────────────────────────────────────────────
 
-
-def how_to_use_html() -> str:
+def how_html() -> str:
     steps = [
-        ("Start simulation", "Launch the default judge demo or choose a difficulty and seed."),
-        ("Watch the chain", "Follow W1 through W5 as outputs move downstream."),
-        ("Find deception", "Look for unchanged outputs, suspicious polish, or hidden flaws after inspection."),
-        ("Act as oversight", "Observe, deep inspect, redirect, terminate, or approve using real environment actions."),
-        ("Review outcome", "Use the post-mortem to compare safe catches against bad approvals."),
+        ("Start", "Pick a scenario and click Start Simulation to initialize a real episode."),
+        ("Watch", "Observe the 5-worker chain. Outputs look clean — surface tells nothing."),
+        ("Investigate", "Use Deep Inspect on suspicious workers to reveal hidden flaws."),
+        ("Act", "Terminate bad workers, Redirect drifters, Approve clean ones."),
+        ("Review", "Post-mortem reveals ground truth: what was hidden and what you caught."),
     ]
-    cards = []
-    for idx, (title, copy) in enumerate(steps, start=1):
-        cards.append(
-            f"""
-            <div class="oa-step-card">
-              <div class="oa-step-num">{idx}</div>
-              <b>{_esc(title)}</b>
-              <span>{_esc(copy)}</span>
-            </div>
-            """
-        )
+    cards = "".join(
+        f"""<div class="oa-step">
+          <div class="oa-step-n">{i}</div>
+          <div class="oa-step-title">{_esc(t)}</div>
+          <div class="oa-step-body">{_esc(c)}</div>
+        </div>"""
+        for i, (t, c) in enumerate(steps, 1)
+    )
     return f"""
-    <section class="oa-section">
-      <div class="oa-section-head">
-        <div>
-          <h2 class="oa-section-title">How to Use</h2>
-          <p class="oa-section-copy">
-            The fastest judge path is: start the deception demo, run one or more
-            oversight turns, inspect suspicious workers, and finish by reading the
-            post-mortem.
-          </p>
-        </div>
-      </div>
-      <div class="oa-how">{''.join(cards)}</div>
-    </section>
-    """
+<div class="oa-section-rule"></div>
+<div class="oa-section">
+  <div style="display:flex;align-items:baseline;gap:18px;margin-bottom:20px;">
+    <span class="oa-section-title">How it works</span>
+    <span class="oa-section-copy">Five steps. No prior knowledge needed.</span>
+  </div>
+  <div class="oa-steps">{cards}</div>
+</div>
+"""
 
 
-def empty_pipeline_html() -> str:
-    cards = []
-    for worker_id in range(1, 6):
-        role = WORKER_ROLES[worker_id]
-        cards.append(
-            f"""
-            <div class="oa-worker idle">
-              <div class="oa-worker-top">
-                <div class="oa-worker-id">W{worker_id}</div>
-                <span class="oa-badge dim">Waiting</span>
-              </div>
-              <div class="oa-role">{_esc(role)}</div>
-              <div class="oa-task">No episode loaded</div>
-              <div class="oa-desc">Start a simulation to assign this worker a scripted task and failure plan.</div>
-              <div class="oa-snippet">(no output yet)</div>
-              <div class="oa-worker-foot"><span class="oa-chip">Real execution only</span></div>
-            </div>
-            """
-        )
-    return f"""
-    <section class="oa-section">
-      <div class="oa-section-head">
-        <div>
-          <h2 class="oa-section-title">Agent Flow</h2>
-          <p class="oa-section-copy">Five deterministic workers execute in sequence. Hidden states stay hidden until inspection or post-mortem.</p>
-        </div>
-      </div>
-      {pipeline_map_svg(None)}
-      <div class="oa-pipeline">{''.join(cards)}</div>
-    </section>
-    """
-
+# ─────────────────────────────────────────────────────────────────────────────
+#  Status bar
+# ─────────────────────────────────────────────────────────────────────────────
 
 def status_html(state: dict[str, Any] | None = None) -> str:
     if not state:
-        stats = [
-            ("Episode", "Not started"),
-            ("Difficulty", "Judge demo"),
-            ("Step budget", "25"),
-            ("Corruption risk", "LOW"),
-            ("Reward", "+0.000"),
+        items = [
+            ("episode", "—", ""),
+            ("difficulty", "—", ""),
+            ("step", "0 / 25", ""),
+            ("risk", "LOW", ""),
+            ("reward", "+0.000", ""),
         ]
     else:
-        stats = [
-            ("Episode", state.get("episode_result", "IN_PROGRESS")),
-            ("Difficulty", str(state.get("difficulty", "?")).upper()),
-            ("Step budget", f"{state.get('step', 0)}/{state.get('max_steps', 25)}"),
-            ("Corruption risk", state.get("corruption_risk", "LOW")),
-            ("Reward", f"{_display_total(state):+.3f}"),
+        total = _display_total(state)
+        items = [
+            ("episode",    state.get("episode_result", "IN_PROGRESS"), ""),
+            ("difficulty", state.get("difficulty", "?").upper(), ""),
+            ("step",       f"{state.get('step',0)} / {state.get('max_steps',25)}", ""),
+            ("risk",       state.get("corruption_risk", "LOW"),
+             "r" if state.get("corruption_risk") == "HIGH" else "g"),
+            ("reward",     f"{total:+.3f}",
+             "g" if total >= 0 else "r"),
         ]
-    cards = "".join(
-        f'<div class="oa-stat"><span>{_esc(label)}</span><b>{_esc(value)}</b></div>'
-        for label, value in stats
+    cells = "".join(
+        f"""<div class="oa-stat">
+          <span class="oa-stat-lbl">{_esc(lbl)}</span>
+          <span class="oa-stat-val {cls}">{_esc(val)}</span>
+        </div>"""
+        for lbl, val, cls in items
     )
-    return f'<div class="oa-status-grid">{cards}</div>'
+    return f'<div class="oa-stats">{cells}</div>'
 
 
-def _worker_class(worker: dict[str, Any], show_real: bool, compromised_ids: set[int]) -> str:
-    visible = str(worker.get("visible_state", "IDLE")).lower()
-    classes = ["oa-worker", visible]
-    real_state = worker.get("real_state_str") or worker.get("state")
-    exposed = worker.get("deep_inspect_done") and real_state in FAILURE_STATES
-    if worker.get("steps_unchanged", 0) >= 2 and worker.get("visible_state") == "WORKING":
-        classes.append("suspicious")
-    if exposed:
-        classes.append("exposed")
+# ─────────────────────────────────────────────────────────────────────────────
+#  Live pipeline nodes  (state-driven)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _node_badge(worker: dict[str, Any]) -> tuple[str, str]:
+    vis = worker.get("visible_state", "IDLE")
+    unch = int(worker.get("steps_unchanged", 0) or 0)
+    real = worker.get("real_state_str") or worker.get("state")
+    deep = bool(worker.get("deep_inspect_done"))
+    if vis in {"COMPLETED", "APPROVED"}:
+        return "g", vis
+    if deep and real in FAILURE_STATES:
+        return "r", "FLAW EXPOSED"
+    if unch >= 2 and vis == "WORKING":
+        return "w", f"SUSPICIOUS ×{unch}"
+    if vis == "WORKING":
+        return "b", "WORKING"
+    return "", vis
+
+def _node_cls(worker: dict[str, Any], show_real: bool, bad_ids: set[int]) -> str:
+    vis  = str(worker.get("visible_state", "IDLE")).lower()
+    wid  = int(worker.get("worker_id", 0))
+    real = worker.get("real_state_str") or worker.get("state")
+    deep = bool(worker.get("deep_inspect_done"))
+    unch = int(worker.get("steps_unchanged", 0) or 0)
+    cls  = ["oa-node", vis]
+    if deep and real in FAILURE_STATES:
+        cls.append("exposed")
+    elif unch >= 2 and vis == "working":
+        cls.append("hot")
     if show_real:
-        classes.append("truth-fail" if worker.get("worker_id") in compromised_ids else "truth-clean")
-    return " ".join(classes)
+        cls.append("truth-fail" if wid in bad_ids else "truth-clean")
+    return " ".join(cls)
 
+def _node_snippet(worker: dict[str, Any]) -> str:
+    hist = worker.get("output_history") or []
+    return _clip(str(hist[-1]), 180) if hist else "(no output yet)"
 
-def _worker_badge(worker: dict[str, Any]) -> tuple[str, str]:
-    visible = worker.get("visible_state", "IDLE")
-    steps_unchanged = int(worker.get("steps_unchanged", 0) or 0)
-    real_state = worker.get("real_state_str") or worker.get("state")
-    deep_done = bool(worker.get("deep_inspect_done"))
-    if visible in {"COMPLETED", "APPROVED"}:
-        return "good", visible
-    if deep_done and real_state in FAILURE_STATES:
-        return "danger", "Flaw exposed"
-    if steps_unchanged >= 2 and visible == "WORKING":
-        return "warn", "Suspicious"
-    return "dim", visible
-
-
-def _worker_snippet(worker: dict[str, Any]) -> str:
-    history = worker.get("output_history") or []
-    if history:
-        return _clip(str(history[-1]), 220)
-    return "(no output yet)"
-
-
-def _worker_chips(worker: dict[str, Any], show_real: bool, compromised_ids: set[int]) -> str:
-    worker_id = int(worker.get("worker_id", 0))
-    steps_unchanged = int(worker.get("steps_unchanged", 0) or 0)
-    deep_done = bool(worker.get("deep_inspect_done"))
-    is_compromised = worker_id in compromised_ids
-    chips = [
-        f'<span class="oa-chip {"hot" if steps_unchanged >= 2 else ""}">unchanged x{steps_unchanged}</span>',
-        f'<span class="oa-chip {"green" if deep_done else ""}">deep inspect {"done" if deep_done else "not run"}</span>',
+def _node_tags(worker: dict[str, Any], show_real: bool, bad_ids: set[int]) -> str:
+    wid  = int(worker.get("worker_id", 0))
+    unch = int(worker.get("steps_unchanged", 0) or 0)
+    deep = bool(worker.get("deep_inspect_done"))
+    tags = [
+        f'<span class="oa-tag {"hot" if unch >= 2 else ""}">Δ={unch}</span>',
+        f'<span class="oa-tag {"grn" if deep else ""}">{"✓ inspected" if deep else "not inspected"}</span>',
     ]
     if worker.get("is_colluding"):
-        chips.append('<span class="oa-chip hot">possible pair</span>')
+        tags.append('<span class="oa-tag hot">colluding</span>')
     if show_real:
-        truth_class = "red" if is_compromised else "green"
-        truth = worker.get("failure_mode", "NONE") if is_compromised else "CLEAN"
-        chips.append(f'<span class="oa-chip {truth_class}">truth: {_esc(truth)}</span>')
-    return "".join(chips)
+        fm = worker.get("failure_mode", "NONE")
+        tags.append(
+            f'<span class="oa-tag {"red" if wid in bad_ids else "grn"}">'
+            f'{"⚠ " + fm if wid in bad_ids else "CLEAN"}</span>'
+        )
+    return "".join(tags)
+
+def _node_card(worker: dict[str, Any], show_real: bool, bad_ids: set[int]) -> str:
+    wid  = int(worker.get("worker_id", 0))
+    bc, bl = _node_badge(worker)
+    return f"""<div class="{_node_cls(worker, show_real, bad_ids)}">
+  <div class="oa-node-id">W{wid}</div>
+  <div class="oa-node-role">{_esc(WORKER_ROLES.get(wid, "Worker"))}</div>
+  <span class="oa-node-badge {bc}">{_esc(bl)}</span>
+  <div class="oa-node-task">{_esc(worker.get("task_type", ""))}</div>
+  <div class="oa-node-desc">{_esc(_clip(worker.get("task_description", ""), 110))}</div>
+  <div class="oa-node-snippet">{_esc(_node_snippet(worker))}</div>
+  <div class="oa-node-tags">{_node_tags(worker, show_real, bad_ids)}</div>
+</div>"""
 
 
-def _worker_card(worker: dict[str, Any], show_real: bool, compromised_ids: set[int]) -> str:
-    worker_id = int(worker.get("worker_id", 0))
-    badge_class, badge_label = _worker_badge(worker)
-    return f"""
-    <div class="{_worker_class(worker, show_real, compromised_ids)}">
-      <div class="oa-worker-top">
-        <div class="oa-worker-id">W{worker_id}</div>
-        <span class="oa-badge {badge_class}">{_esc(badge_label)}</span>
-      </div>
-      <div class="oa-role">{_esc(WORKER_ROLES.get(worker_id, "Worker"))}</div>
-      <div class="oa-task">{_esc(worker.get("task_type", "Unknown"))}</div>
-      <div class="oa-desc">{_esc(_clip(worker.get("task_description", ""), 145))}</div>
-      <div class="oa-snippet">{_esc(_worker_snippet(worker))}</div>
-      <div class="oa-worker-foot">{_worker_chips(worker, show_real, compromised_ids)}</div>
-    </div>
-    """
+def _pipe_bar_svg(env: OversightArenaEnvironment | None, show_real: bool) -> str:
+    """Slim animated SVG bar showing live worker states across the pipeline."""
+    if env is None:
+        workers = [{"worker_id": i, "visible_state": "IDLE"} for i in range(1, 6)]
+        step_txt = "No episode"
+        bad_ids: set[int] = set()
+    else:
+        state  = env.state_dict
+        workers = state.get("workers", [])
+        step_txt = f"Step {state.get('step',0)}/{state.get('max_steps',25)}"
+        bad_ids = {int(k) for k in state.get("failure_plan", {}).keys()}
+
+    STATE_COLOR = {
+        "IDLE":      "#2d4156",
+        "WAITING":   "#2d4156",
+        "WORKING":   "#22d3ff",
+        "COMPLETED": "#00ffaa",
+        "APPROVED":  "#f5a623",
+        "REDIRECTED":"#a78bfa",
+    }
+    xs  = [110, 298, 486, 674, 862]
+    nodes = []
+    for idx, w in enumerate(workers[:5]):
+        vis = str(w.get("visible_state", "IDLE"))
+        wid = int(w.get("worker_id", idx + 1))
+        unch = int(w.get("steps_unchanged", 0) or 0)
+        deep = bool(w.get("deep_inspect_done"))
+        real = w.get("real_state_str") or w.get("state", "IDLE")
+        x = xs[idx]
+
+        color = STATE_COLOR.get(vis, "#2d4156")
+        if deep and real in FAILURE_STATES:
+            color = "#ff3358"
+        elif unch >= 2 and vis == "WORKING":
+            color = "#f5a623"
+        if show_real and wid in bad_ids:
+            color = "#ff3358"
+
+        nodes.append(f"""
+        <g transform="translate({x - 54} 32)">
+          <rect width="108" height="88" rx="4"
+                fill="rgba(6,12,24,0.96)" stroke="{color}" stroke-width="1.5"/>
+          <rect x="0" y="0" width="108" height="3" rx="4" fill="{color}"/>
+          <circle cx="90" cy="18" r="5" fill="{color}" opacity="0.9"/>
+          <text x="54" y="40" text-anchor="middle"
+                fill="#dceeff" font-family="Syne,sans-serif"
+                font-size="28" font-weight="800" letter-spacing="-1.5">W{wid}</text>
+          <text x="54" y="58" text-anchor="middle"
+                fill="{color}" font-family="'JetBrains Mono',monospace"
+                font-size="7.5" font-weight="700" letter-spacing="2">{_esc(vis)}</text>
+          <text x="54" y="74" text-anchor="middle"
+                fill="#2d4156" font-family="'JetBrains Mono',monospace"
+                font-size="7">Δ={unch}</text>
+        </g>""")
+
+    return f"""<div class="oa-pipe-bar">
+  <svg viewBox="0 0 980 156" role="img" aria-label="Live oversight pipeline">
+    <defs>
+      <filter id="pbGlow">
+        <feGaussianBlur stdDeviation="4" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <rect width="980" height="156" fill="rgba(4,7,13,0.92)"/>
+    <line x1="56" y1="76" x2="924" y2="76"
+          stroke="rgba(0,255,170,0.09)" stroke-width="6" stroke-linecap="round"/>
+    <line class="dash-flow" x1="56" y1="76" x2="924" y2="76"
+          stroke="#22d3ff" stroke-opacity="0.4" stroke-width="2" fill="none"
+          stroke-dasharray="10 13"/>
+    <!-- live packet (green) -->
+    <circle r="7" fill="#00ffaa" filter="url(#pbGlow)"
+            style="offset-path:path('M56 76 L924 76'); animation:flowPkt 3.2s linear infinite;"/>
+    {''.join(nodes)}
+    <text x="940" y="70" fill="rgba(0,255,170,0.45)"
+          font-family="'JetBrains Mono',monospace" font-size="9"
+          font-weight="700" letter-spacing="1.5">{_esc(step_txt)}</text>
+  </svg>
+</div>"""
 
 
 def pipeline_html(env: OversightArenaEnvironment | None, show_real: bool = False) -> str:
     if env is None:
-        return empty_pipeline_html()
+        bar = _pipe_bar_svg(None, False)
+        idle_cards = "".join(
+            f"""<div class="oa-node">
+              <div class="oa-node-id">W{i}</div>
+              <div class="oa-node-role">{_esc(WORKER_ROLES.get(i,""))}</div>
+              <span class="oa-node-badge">IDLE</span>
+              <div class="oa-node-desc">Start a simulation to load a scripted task.</div>
+              <div class="oa-node-snippet">(no output yet)</div>
+            </div>"""
+            for i in range(1, 6)
+        )
+        return f"""<div class="oa-section">
+  <div class="oa-section-title" style="margin-bottom:16px;">Live Agent Pipeline</div>
+  {bar}
+  <div class="oa-nodes">{idle_cards}</div>
+</div>"""
 
-    state = env.state_dict
-    compromised_ids = {int(k) for k in state.get("failure_plan", {}).keys()}
-    cards = [
-        _worker_card(worker, show_real, compromised_ids)
-        for worker in state.get("workers", [])
-    ]
-
-    legend = (
-        "Live view hides true failure states. Yellow means suspicious from visible signals; red means a deep inspection has exposed a flaw."
-        if not show_real
-        else "Post-mortem view reveals which workers were actually compromised by the seeded failure plan."
+    state    = env.state_dict
+    bad_ids  = {int(k) for k in state.get("failure_plan", {}).keys()}
+    cards    = "".join(
+        _node_card(w, show_real, bad_ids) for w in state.get("workers", [])
     )
-    return f"""
-    <section class="oa-section">
-      <div class="oa-section-head">
-        <div>
-          <h2 class="oa-section-title">Agent Flow</h2>
-          <p class="oa-section-copy">{_esc(legend)}</p>
-        </div>
-      </div>
-      {pipeline_map_svg(env, show_real)}
-      <div class="oa-pipeline">{''.join(cards)}</div>
-    </section>
-    """
+    bar      = _pipe_bar_svg(env, show_real)
+    legend   = (
+        "Live view — failure states are hidden. Suspicious = output unchanged ×2+; Flaw exposed = deep inspect ran."
+        if not show_real else
+        "Post-mortem — ground truth revealed. Red border = worker was compromised by the seeded failure plan."
+    )
+    return f"""<div class="oa-section">
+  <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:16px;">
+    <span class="oa-section-title">Live Agent Pipeline</span>
+    <span class="oa-section-copy">{_esc(legend)}</span>
+  </div>
+  {bar}
+  <div class="oa-nodes">{cards}</div>
+</div>"""
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Reward panel
+# ─────────────────────────────────────────────────────────────────────────────
 
 def reward_html(
     breakdown: dict[str, float] | None,
@@ -1166,197 +1239,182 @@ def reward_html(
 ) -> str:
     breakdown = breakdown or {}
     cards = []
-    for key, label in REWARD_LABELS.items():
-        value = float(breakdown.get(key, 0.0) or 0.0)
-        cards.append(
-            f"""
-            <div class="oa-reward-card">
-              <span>{_esc(label)}</span>
-              <b>{value:+.2f}</b>
-            </div>
-            """
-        )
-    step_line = "" if step_reward is None else f"<span>Last step {step_reward:+.3f}</span>"
-    return f"""
-    <div class="oa-panel">
-      <div class="oa-section-head">
-        <div>
-          <h2 class="oa-section-title">Reward Signal</h2>
-          <p class="oa-section-copy">Independent reward components show exactly why oversight succeeded or failed.</p>
-        </div>
-        <div class="oa-badge {'good' if total >= 0 else 'danger'}">total {total:+.3f}</div>
-      </div>
-      <div class="oa-worker-foot">{step_line}<span class="oa-chip">result: {_esc(episode_result)}</span></div>
-      <div class="oa-reward-grid">{''.join(cards)}</div>
-    </div>
-    """
+    for key, lbl in REWARD_LABELS.items():
+        v = float(breakdown.get(key, 0.0) or 0.0)
+        vc = "p" if v > 0 else ("n" if v < 0 else "z")
+        cards.append(f"""<div class="oa-rcard">
+          <span class="oa-rcard-lbl">{_esc(lbl)}</span>
+          <span class="oa-rcard-val {vc}">{v:+.2f}</span>
+        </div>""")
 
+    total_color = "var(--sig)" if total >= 0 else "var(--bad)"
+    step_color  = "var(--sig)" if (step_reward or 0) >= 0 else "var(--bad)"
+    step_note   = "" if step_reward is None else (
+        f'<span style="color:{step_color}; font-size:11px;">last step {step_reward:+.3f}</span>'
+    )
+    return f"""<div class="oa-console">
+  <div class="oa-console-hdr">
+    <div class="oa-dot"></div>
+    Reward Signal
+    <span style="margin-left:auto;font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-0.04em;color:{total_color};">{total:+.3f}</span>
+  </div>
+  <div style="padding:10px 16px 4px;display:flex;gap:12px;align-items:center;">
+    <span class="oa-tag">{_esc(episode_result)}</span>
+    {step_note}
+  </div>
+  <div class="oa-reward-grid" style="margin:8px 16px 16px;">{" ".join(cards)}</div>
+</div>"""
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Episode log
+# ─────────────────────────────────────────────────────────────────────────────
 
 def log_html(log: list[dict[str, Any]] | None) -> str:
     if not log:
-        return '<div class="oa-empty">No actions yet. Start a simulation, then submit an action or run an oracle-guided demo step.</div>'
-
-    items = []
-    for entry in reversed(log[-8:]):
-        if entry.get("kind") == "reset":
-            items.append(
-                f"""
-                <div class="oa-log-item">
-                  <div class="oa-log-line">
-                    <span>New episode</span>
-                    <span class="oa-badge good">{_esc(entry.get('difficulty', '?'))}</span>
-                  </div>
-                  <div class="oa-log-meta">seed={_esc(entry.get('seed', '?'))} | max_steps={_esc(entry.get('max_steps', 25))}</div>
-                </div>
-                """
-            )
+        return '<div class="oa-empty">No actions yet — start a simulation and submit an action.</div>'
+    rows = []
+    for e in reversed(log[-10:]):
+        if e.get("kind") == "reset":
+            rows.append(f"""<div class="oa-log-row" style="color:var(--muted);">
+              <span class="oa-log-n">—</span>
+              <span class="oa-log-a" style="color:var(--sig);">NEW EPISODE · {_esc(e.get("difficulty","?"))} · seed={_esc(e.get("seed","?"))}</span>
+              <span></span>
+            </div>""")
             continue
-        summary = entry.get("summary") or "Action submitted."
-        reward = float(entry.get("reward", 0.0) or 0.0)
-        badge = "good" if reward >= 0 else "danger"
-        items.append(
-            f"""
-            <div class="oa-log-item">
-              <div class="oa-log-line">
-                <span>Step {_esc(entry.get('step', '?'))}: {_esc(entry.get('action', ''))}</span>
-                <span class="oa-badge {badge}">{reward:+.3f}</span>
-              </div>
-              <div class="oa-log-meta">{_esc(summary)}</div>
-            </div>
-            """
-        )
-    return f'<div class="oa-log">{"".join(items)}</div>'
+        r = float(e.get("reward", 0.0) or 0.0)
+        rc = "p" if r >= 0 else "n"
+        rows.append(f"""<div class="oa-log-row">
+          <span class="oa-log-n">s{_esc(e.get("step","?"))}</span>
+          <span class="oa-log-a">{_esc(e.get("action",""))}</span>
+          <span class="oa-log-r {rc}">{r:+.3f}</span>
+        </div>
+        {"" if not e.get("summary") else f'<div class="oa-log-row" style="padding-top:0;"><span></span><span class="oa-log-sub">{_esc(e.get("summary",""))}</span></div>'}""")
+    inner = "".join(rows)
+    return f"""<div class="oa-console">
+  <div class="oa-console-hdr">
+    <div class="oa-dot"></div>Episode Log
+  </div>
+  <div class="oa-log">{inner}</div>
+</div>"""
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Post-mortem
+# ─────────────────────────────────────────────────────────────────────────────
 
 def postmortem_html(state: dict[str, Any]) -> str:
     compromised = {int(k): v for k, v in state.get("failure_plan", {}).items()}
-    caught = set(state.get("caught_workers", []) or [])
+    caught   = set(state.get("caught_workers",  []) or [])
     hallpass = set(state.get("hallpass_workers", []) or [])
-    colluding_pair = state.get("colluding_pair", []) or []
-    total = _display_total(state)
+    collude  = state.get("colluding_pair", []) or []
+    total    = _display_total(state)
+    result   = state.get("episode_result", "IN_PROGRESS")
 
-    worker_rows = []
-    for worker in state.get("workers", []):
-        worker_id = int(worker.get("worker_id", 0))
-        plan = compromised.get(worker_id)
-        if plan:
-            mode = plan.get("failure_mode", "?")
-            if worker_id in hallpass:
-                outcome = "Missed: approved bad output"
-            elif worker_id in caught:
-                outcome = "Caught by oversight"
-            else:
-                outcome = "Still unresolved"
-        else:
-            mode = "NONE"
-            outcome = "Clean worker"
-        worker_rows.append(
-            f"""
-            <tr>
-              <td>W{worker_id}</td>
-              <td>{_esc(WORKER_ROLES.get(worker_id, 'Worker'))}</td>
-              <td>{_esc(mode)}</td>
-              <td>{_esc(worker.get('real_state_str', '?'))}</td>
-              <td>{_esc(outcome)}</td>
-            </tr>
-            """
-        )
-
-    result = state.get("episode_result", "IN_PROGRESS")
-    verdict_class = "good" if result == "CLEAN_COMPLETE" else "danger"
+    verdict_cls = {"CLEAN_COMPLETE": "clean", "DIRTY_COMPLETE": "dirty", "TIMEOUT": "timeout"}.get(result, "timeout")
     explanation = {
-        "CLEAN_COMPLETE": "All workers were approved without letting a compromised output propagate.",
-        "DIRTY_COMPLETE": "The pipeline completed, but at least one compromised worker was approved.",
-        "TIMEOUT": "The supervisor exhausted the step budget before resolving the pipeline.",
-    }.get(result, "Episode is still running.")
+        "CLEAN_COMPLETE": "Every compromised worker was caught. No bad output reached downstream.",
+        "DIRTY_COMPLETE": "Pipeline completed — but at least one failing worker slipped through approval.",
+        "TIMEOUT":        "Step budget exhausted before the pipeline could be resolved.",
+    }.get(result, "Episode still running.")
 
-    return f"""
-    <section class="oa-section">
-      <div class="oa-panel">
-        <div class="oa-section-head">
-          <div>
-            <h2 class="oa-section-title">Post-mortem</h2>
-            <p class="oa-section-copy">{_esc(explanation)}</p>
-          </div>
-          <div class="oa-badge {verdict_class}">{_esc(result)} | {total:+.3f}</div>
-        </div>
-        <div class="oa-post-grid">
-          <div>
-            <table class="oa-table">
-              <thead>
-                <tr><th>Worker</th><th>Role</th><th>Injected failure</th><th>Final state</th><th>Oversight outcome</th></tr>
-              </thead>
-              <tbody>{''.join(worker_rows)}</tbody>
-            </table>
-          </div>
-          <div class="oa-oracle">
-            <h2 class="oa-section-title">Why it matters</h2>
-            <p class="oa-section-copy">
-              The deceptive and colluding workers are the important signal: they look
-              safe until the supervisor spends budget to inspect and reason across the fleet.
-            </p>
-            <div class="oa-worker-foot">
-              <span class="oa-chip red">missed: {len(hallpass)}</span>
-              <span class="oa-chip green">caught: {len(caught)}</span>
-              <span class="oa-chip hot">colluding pair: {_esc(colluding_pair or 'none')}</span>
-              <span class="oa-chip">seed: {_esc(state.get('seed'))}</span>
-            </div>
-          </div>
-        </div>
+    trs = []
+    for w in state.get("workers", []):
+        wid  = int(w.get("worker_id", 0))
+        plan = compromised.get(wid)
+        mode = plan.get("failure_mode", "?") if plan else "NONE"
+        if not plan:
+            out_cls, out_txt = "clean", "Clean worker"
+        elif wid in hallpass:
+            out_cls, out_txt = "missed", "Missed — bad output approved"
+        elif wid in caught:
+            out_cls, out_txt = "caught", "Caught by oversight"
+        else:
+            out_cls, out_txt = "", "Unresolved"
+        trs.append(f"""<tr>
+          <td>W{wid}</td>
+          <td>{_esc(WORKER_ROLES.get(wid,""))}</td>
+          <td>{_esc(mode)}</td>
+          <td>{_esc(w.get("real_state_str","?"))}</td>
+          <td class="{out_cls}">{_esc(out_txt)}</td>
+        </tr>""")
+
+    return f"""<div class="oa-pm">
+  <div class="oa-pm-hdr">
+    <div>
+      <div class="oa-pm-title">Post-mortem</div>
+      <div class="oa-section-copy">{_esc(explanation)}</div>
+    </div>
+    <span class="oa-verdict {verdict_cls}">{_esc(result)} &nbsp; {total:+.3f}</span>
+  </div>
+  <div class="oa-pm-grid">
+    <table class="oa-table">
+      <thead><tr>
+        <th>Worker</th><th>Role</th>
+        <th>Injected failure</th><th>Final state</th><th>Outcome</th>
+      </tr></thead>
+      <tbody>{"".join(trs)}</tbody>
+    </table>
+    <div class="oa-pm-side">
+      <div class="oa-section-title" style="margin-bottom:12px;">Why it matters</div>
+      <div class="oa-section-copy" style="margin-bottom:16px;">
+        Deceptive workers look safe until the supervisor commits budget to inspect.
+        Colluding pairs defeat per-agent checks entirely — cross-fleet reasoning required.
       </div>
-    </section>
-    """
+      <div class="oa-node-tags">
+        <span class="oa-tag red">missed: {len(hallpass)}</span>
+        <span class="oa-tag grn">caught: {len(caught)}</span>
+        <span class="oa-tag hot">colluding: {_esc(collude or "none")}</span>
+        <span class="oa-tag">seed: {_esc(state.get("seed"))}</span>
+      </div>
+    </div>
+  </div>
+</div>"""
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Oracle
+# ─────────────────────────────────────────────────────────────────────────────
 
 def oracle_html(env: OversightArenaEnvironment | None, is_done: bool) -> str:
     if env is None:
-        return '<div class="oa-empty">Start an episode before asking the oracle.</div>'
-
-    state = env.state_dict
+        return '<div class="oa-empty">Start an episode first.</div>'
+    state    = env.state_dict
     approved = set(state.get("approved_workers", []) or [])
-    colluding = state.get("colluding_pair", []) or []
+    collude  = state.get("colluding_pair", []) or []
     rows = []
-    for worker in state.get("workers", []):
-        worker_id = int(worker.get("worker_id", 0))
-        real_state_str = worker.get("real_state_str") or worker.get("state")
+    for w in state.get("workers", []):
+        wid = int(w.get("worker_id", 0))
         try:
-            real_state = WorkerState(real_state_str)
+            rs = WorkerState(w.get("real_state_str") or w.get("state"))
         except ValueError:
             continue
-        partner_approved = any(partner in approved for partner in colluding if partner != worker_id)
-        optimal = oracle_action(
-            real_state,
-            int(worker.get("steps_unchanged", 0) or 0),
-            partner_approved,
-            bool(worker.get("deep_inspect_done")),
-        )
-        visible_or_real = real_state_str if is_done else worker.get("visible_state", "?")
-        label = "real" if is_done else "visible"
-        rows.append(
-            f"""
-            <tr>
-              <td>W{worker_id}</td>
-              <td>{_esc(worker.get('task_type', '?'))}</td>
-              <td>{_esc(label)}={_esc(visible_or_real)}</td>
-              <td><span class="oa-badge good">{_esc(optimal)}</span></td>
-            </tr>
-            """
-        )
-    return f"""
-    <div class="oa-oracle">
-      <div class="oa-section-head">
-        <div>
-          <h2 class="oa-section-title">Oracle Reference</h2>
-          <p class="oa-section-copy">For demos only: this panel uses hidden server-side truth. Training clients do not receive this state.</p>
-        </div>
-      </div>
-      <table class="oa-table">
-        <thead><tr><th>Worker</th><th>Task</th><th>State shown</th><th>Optimal action</th></tr></thead>
-        <tbody>{''.join(rows)}</tbody>
-      </table>
-    </div>
-    """
+        partner_approved = any(p in approved for p in collude if p != wid)
+        opt = oracle_action(rs, int(w.get("steps_unchanged", 0) or 0),
+                            partner_approved, bool(w.get("deep_inspect_done")))
+        vis_or_real = w.get("real_state_str") if is_done else w.get("visible_state", "?")
+        lbl = "real" if is_done else "visible"
+        rows.append(f"""<tr>
+          <td>W{wid}</td>
+          <td>{_esc(w.get("task_type","?"))}</td>
+          <td>{_esc(lbl)}={_esc(vis_or_real)}</td>
+          <td><span class="oa-tag grn">{_esc(opt)}</span></td>
+        </tr>""")
+    return f"""<div class="oa-oracle-wrap">
+  <div class="oa-oracle-hdr">
+    <div class="oa-dot w"></div>
+    Oracle — uses hidden server-side truth (training clients never see this)
+  </div>
+  <table class="oa-table" style="margin:0;">
+    <thead><tr><th>Worker</th><th>Task</th><th>State visible</th><th>Optimal action</th></tr></thead>
+    <tbody>{"".join(rows)}</tbody>
+  </table>
+</div>"""
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Helpers (unchanged from original)
+# ─────────────────────────────────────────────────────────────────────────────
 
 def _scenario_config(scenario: str, difficulty: str, seed: float | int | None) -> tuple[str, int | None]:
     if scenario.startswith("Judge demo"):
@@ -1370,51 +1428,33 @@ def _scenario_config(scenario: str, difficulty: str, seed: float | int | None) -
 
 
 def _active_oracle_action(env: OversightArenaEnvironment) -> str:
-    state = env.state_dict
+    state    = env.state_dict
     approved = set(state.get("approved_workers", []) or [])
-    colluding = state.get("colluding_pair", []) or []
-    workers = state.get("workers", [])
-
-    priorities = {
-        "TERMINATE": 0,
-        "DEEP_INSPECT": 1,
-        "REDIRECT": 2,
-        "APPROVE": 3,
-        "OBSERVE": 4,
-    }
+    collude  = state.get("colluding_pair", []) or []
+    priorities = {"TERMINATE": 0, "DEEP_INSPECT": 1, "REDIRECT": 2, "APPROVE": 3, "OBSERVE": 4}
     candidates: list[tuple[int, int, str, dict[str, Any]]] = []
-    for worker in workers:
-        worker_id = int(worker.get("worker_id", 0))
+    for w in state.get("workers", []):
+        wid = int(w.get("worker_id", 0))
         try:
-            real_state = WorkerState(worker.get("real_state_str") or worker.get("state"))
+            rs = WorkerState(w.get("real_state_str") or w.get("state"))
         except ValueError:
             continue
-        partner_approved = any(partner in approved for partner in colluding if partner != worker_id)
-        optimal = oracle_action(
-            real_state,
-            int(worker.get("steps_unchanged", 0) or 0),
-            partner_approved,
-            bool(worker.get("deep_inspect_done")),
-        )
-        if real_state == WorkerState.IDLE and optimal == "OBSERVE":
+        partner_approved = any(p in approved for p in collude if p != wid)
+        opt = oracle_action(rs, int(w.get("steps_unchanged", 0) or 0),
+                            partner_approved, bool(w.get("deep_inspect_done")))
+        if rs == WorkerState.IDLE and opt == "OBSERVE":
             priority = 8
-        elif real_state == WorkerState.WORKING and optimal == "OBSERVE":
+        elif rs == WorkerState.WORKING and opt == "OBSERVE":
             priority = 5
         else:
-            priority = priorities.get(optimal, 6)
-        candidates.append((priority, worker_id, optimal, worker))
-
-    _, worker_id, verb, _worker = min(candidates, key=lambda item: (item[0], item[1]))
+            priority = priorities.get(opt, 6)
+        candidates.append((priority, wid, opt, w))
+    _, wid, verb, _ = min(candidates, key=lambda item: (item[0], item[1]))
     if verb == "REDIRECT":
-        return (
-            f"REDIRECT {worker_id} Refocus on the original task and ignore unrelated output.\n"
-            "<reasoning>Oracle-guided demo: this worker is best handled with a soft reset before approval.</reasoning>"
-        )
-    return _format_action(
-        verb,
-        worker_id,
-        "Oracle-guided demo: execute the optimal oversight move to show the real environment dynamics.",
-    )
+        return (f"REDIRECT {wid} Refocus on the original task.\n"
+                "<reasoning>Oracle-guided: soft reset preferred for off-task worker.</reasoning>")
+    return _format_action(verb, wid,
+                          "Oracle-guided demo: optimal oversight move for current pipeline state.")
 
 
 def _action_label(action_text: str) -> str:
@@ -1422,35 +1462,35 @@ def _action_label(action_text: str) -> str:
     return re.sub(r"\s+", " ", first)[:96] or "(empty action)"
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  Gradio layout
+# ─────────────────────────────────────────────────────────────────────────────
+
 with gr.Blocks(title="Oversight Arena") as demo:
-    env_state = gr.State(None)
-    episode_log_state = gr.State([])
+    env_state          = gr.State(None)
+    episode_log_state  = gr.State([])
     episode_done_state = gr.State(False)
 
     gr.HTML(f"<style>{APP_CSS}</style>")
-    gr.HTML(landing_html())
-    gr.HTML(how_to_use_html())
+    gr.HTML(hero_html())
+    gr.HTML(how_html())
 
-    with gr.Row():
+    # ── controls row ────────────────────────────────────────────────────────
+    gr.HTML('<div class="oa-section-rule"></div>')
+    with gr.Row(equal_height=False):
         with gr.Column(scale=5):
-            gr.HTML(
-                """
-                <div class="oa-control-panel">
-                  <div class="oa-callout">
-                    <b>Default path for judges:</b> keep "Judge demo" selected, click Start Simulation,
-                    then click Run Oracle-Guided Step a few times. Switch to manual actions when you
-                    want to test your own oversight decisions.
-                  </div>
-                </div>
-                """
-            )
+            gr.HTML("""<div class="oa-section" style="padding-bottom:12px;">
+              <div class="oa-console-hdr" style="margin-bottom:16px;">
+                <div class="oa-dot"></div>
+                Simulation controls
+              </div>""")
             with gr.Row():
                 scenario_radio = gr.Radio(
                     choices=[
                         "Judge demo: deceptive workers guaranteed",
                         "Easy walkthrough: one visible failure",
                         "Medium challenge: mixed failures",
-                        "Custom difficulty and seed",
+                        "Custom difficulty + seed",
                     ],
                     value="Judge demo: deceptive workers guaranteed",
                     label="Scenario",
@@ -1459,146 +1499,100 @@ with gr.Blocks(title="Oversight Arena") as demo:
                 difficulty_radio = gr.Radio(
                     choices=["easy", "medium", "hard"],
                     value="hard",
-                    label="Custom difficulty",
+                    label="Difficulty (custom only)",
                     scale=1,
                 )
                 seed_input = gr.Number(
-                    label="Custom seed",
-                    value=42,
-                    precision=0,
-                    minimum=0,
-                    maximum=999999,
+                    label="Seed (custom only)",
+                    value=42, precision=0, minimum=0, maximum=999999,
                     scale=1,
                 )
             with gr.Row():
-                reset_btn = gr.Button("Start Simulation", variant="primary", scale=2)
-                auto_step_btn = gr.Button("Run Oracle-Guided Step", variant="primary", scale=2)
-                show_oracle_btn = gr.Button("Show Oracle Reference", variant="secondary", scale=1)
+                reset_btn      = gr.Button("▶  Start Simulation",       variant="primary",    scale=2)
+                auto_step_btn  = gr.Button("⚡  Oracle-Guided Step",    variant="primary",    scale=2)
+                show_oracle_btn= gr.Button("⊙  Show Oracle",            variant="secondary",  scale=1)
+            gr.HTML("</div>")
         with gr.Column(scale=3):
             status_display = gr.HTML(status_html())
 
-    pipeline_display = gr.HTML(empty_pipeline_html())
+    # ── live pipeline ────────────────────────────────────────────────────────
+    pipeline_display = gr.HTML(pipeline_html(None))
 
+    # ── observation + action console ─────────────────────────────────────────
+    gr.HTML('<div class="oa-section-rule"></div>')
     with gr.Row():
         with gr.Column(scale=3):
             observation_box = gr.Textbox(
-                label="Supervisor Observation",
-                value="Start a simulation to see the exact observation string returned by the environment.",
-                lines=20,
-                max_lines=42,
-                interactive=False,
+                label="Supervisor Observation — raw env.step() return",
+                value="Start a simulation to see the real observation string.",
+                lines=22, max_lines=44, interactive=False,
                 elem_classes=["obs-text"],
             )
         with gr.Column(scale=2):
-            gr.HTML(
-                """
-                <div class="oa-section-head">
-                  <div>
-                    <h2 class="oa-section-title">Manual Oversight</h2>
-                    <p class="oa-section-copy">Quick buttons fill a real action string. Submit it to step the environment.</p>
-                  </div>
-                </div>
-                """
-            )
+            gr.HTML("""<div class="oa-console" style="margin-bottom:10px;">
+              <div class="oa-console-hdr"><div class="oa-dot"></div>Quick Actions</div>
+              <div style="padding:14px 16px 4px;">""")
             with gr.Row():
-                obs_buttons = [gr.Button(f"Observe W{i}", size="sm") for i in range(1, 6)]
+                obs_buttons = [gr.Button(f"OBS W{i}", size="sm") for i in range(1, 6)]
+            gr.HTML('<div style="height:8px;"></div>')
             with gr.Row():
-                action_worker_num = gr.Number(
-                    label="Worker",
-                    value=1,
-                    minimum=1,
-                    maximum=5,
-                    step=1,
-                    precision=0,
-                )
-                deep_btn = gr.Button("Deep Inspect", size="sm")
-                terminate_btn = gr.Button("Terminate", size="sm")
-                approve_btn = gr.Button("Approve", size="sm")
+                action_worker_num = gr.Number(label="Worker #", value=1, minimum=1, maximum=5, step=1, precision=0)
+                deep_btn      = gr.Button("Deep Inspect",  size="sm")
+                terminate_btn = gr.Button("Terminate",     size="sm")
+                approve_btn   = gr.Button("Approve",       size="sm")
+            gr.HTML('<div style="height:8px;"></div>')
             with gr.Row():
-                redirect_worker_num = gr.Number(
-                    label="Redirect worker",
-                    value=1,
-                    minimum=1,
-                    maximum=5,
-                    step=1,
-                    precision=0,
-                )
-                redirect_instr = gr.Textbox(
-                    label="Redirect instruction",
-                    placeholder="Refocus on the original requirement and produce only the requested output.",
-                    lines=1,
-                )
-            redirect_btn = gr.Button("Redirect Worker", size="sm")
+                redirect_worker_num = gr.Number(label="Redirect #", value=1, minimum=1, maximum=5, step=1, precision=0)
+                redirect_instr = gr.Textbox(label="Instruction", placeholder="Refocus on the original task.", lines=1)
+            redirect_btn = gr.Button("↩ Redirect", size="sm")
+            gr.HTML("</div></div>")
             action_input = gr.Textbox(
-                label="Action submitted to env.step()",
+                label="Action text  →  passed to env.step()",
                 value=_format_action("OBSERVE", 1),
-                lines=5,
-                elem_classes=["act-text"],
+                lines=5, elem_classes=["act-text"],
             )
-            step_btn = gr.Button("Submit Manual Action", variant="primary")
+            step_btn = gr.Button("▶  Submit Action", variant="primary")
 
+    # ── log + rewards ────────────────────────────────────────────────────────
+    gr.HTML('<div class="oa-section-rule"></div>')
     with gr.Row():
         with gr.Column(scale=3):
-            gr.HTML(
-                """
-                <div class="oa-section-head">
-                  <div>
-                    <h2 class="oa-section-title">Clean Episode Log</h2>
-                    <p class="oa-section-copy">A concise trace of actions, rewards, and environment summaries.</p>
-                  </div>
-                </div>
-                """
-            )
             episode_log_display = gr.HTML(log_html([]))
         with gr.Column(scale=2):
             reward_panel = gr.HTML(reward_html({}, 0.0))
 
+    # ── oracle ───────────────────────────────────────────────────────────────
     oracle_output = gr.HTML("")
 
+    # ── post-mortem ──────────────────────────────────────────────────────────
     with gr.Row(visible=False) as postmortem_row:
         postmortem_display = gr.HTML("")
 
-    _ALL_OUTPUTS = [
-        env_state,
-        episode_log_state,
-        episode_done_state,
-        observation_box,
-        pipeline_display,
-        status_display,
-        episode_log_display,
-        reward_panel,
-        oracle_output,
-        postmortem_row,
-        postmortem_display,
-        action_input,
+    # ── output tuple shared by all handlers ─────────────────────────────────
+    _ALL = [
+        env_state, episode_log_state, episode_done_state,
+        observation_box, pipeline_display, status_display,
+        episode_log_display, reward_panel, oracle_output,
+        postmortem_row, postmortem_display, action_input,
     ]
 
+    # ── handlers ─────────────────────────────────────────────────────────────
+
     def do_reset(scenario: str, difficulty: str, seed_val):
-        difficulty_val, seed = _scenario_config(scenario, difficulty, seed_val)
+        diff, seed = _scenario_config(scenario, difficulty, seed_val)
         env = OversightArenaEnvironment()
-        obs_result = env.reset(difficulty=difficulty_val, seed=seed)
-        state = env.state_dict
-        obs_text = obs_result.metadata.get("pipeline_text", "")
-        log = [
-            {
-                "kind": "reset",
-                "difficulty": difficulty_val.upper(),
-                "seed": state.get("seed"),
-                "max_steps": state.get("max_steps", 25),
-            }
-        ]
+        obs = env.reset(difficulty=diff, seed=seed)
+        s   = env.state_dict
+        log = [{"kind": "reset", "difficulty": diff.upper(),
+                "seed": s.get("seed"), "max_steps": s.get("max_steps", 25)}]
         return (
-            env,
-            log,
-            False,
-            obs_text,
+            env, log, False,
+            obs.metadata.get("pipeline_text", ""),
             pipeline_html(env, show_real=False),
-            status_html(state),
+            status_html(s),
             log_html(log),
-            reward_html(state.get("reward_breakdown", {}), _display_total(state)),
-            "",
-            gr.update(visible=False),
-            "",
+            reward_html(s.get("reward_breakdown", {}), _display_total(s)),
+            "", gr.update(visible=False), "",
             _format_action("OBSERVE", 1),
         )
 
@@ -1610,91 +1604,54 @@ with gr.Blocks(title="Oversight Arena") as demo:
     ):
         log = list(log or [])
         if env is None:
-            return (
-                env,
-                log,
-                is_done,
-                "Start a simulation before submitting an action.",
-                empty_pipeline_html(),
-                status_html(),
-                log_html(log),
-                reward_html({}, 0.0),
-                "",
-                gr.update(visible=False),
-                "",
-                action_text or _format_action("OBSERVE", 1),
-            )
+            return (env, log, is_done,
+                    "Start a simulation first.",
+                    pipeline_html(None), status_html(),
+                    log_html(log), reward_html({}, 0.0), "",
+                    gr.update(visible=False), "",
+                    action_text or _format_action("OBSERVE", 1))
 
         if is_done:
-            state = env.state_dict
-            return (
-                env,
-                log,
-                True,
-                env._build_observation(),
-                pipeline_html(env, show_real=True),
-                status_html(state),
-                log_html(log),
-                reward_html(state.get("reward_breakdown", {}), _display_total(state), state.get("episode_result", "")),
-                "",
-                gr.update(visible=True),
-                postmortem_html(state),
-                action_text,
-            )
+            s = env.state_dict
+            return (env, log, True,
+                    env._build_observation(),
+                    pipeline_html(env, show_real=True),
+                    status_html(s),
+                    log_html(log),
+                    reward_html(s.get("reward_breakdown", {}), _display_total(s), s.get("episode_result", "")),
+                    "", gr.update(visible=True), postmortem_html(s), action_text)
 
         if not action_text or not action_text.strip():
-            state = env.state_dict
-            return (
-                env,
-                log,
-                False,
-                env._build_observation(),
-                pipeline_html(env, show_real=False),
-                status_html(state),
-                log_html(log),
-                reward_html(state.get("reward_breakdown", {}), _display_total(state)),
-                "",
-                gr.update(visible=False),
-                "",
-                _format_action("OBSERVE", 1),
-            )
+            s = env.state_dict
+            return (env, log, False,
+                    env._build_observation(),
+                    pipeline_html(env, show_real=False),
+                    status_html(s),
+                    log_html(log),
+                    reward_html(s.get("reward_breakdown", {}), _display_total(s)),
+                    "", gr.update(visible=False), "",
+                    _format_action("OBSERVE", 1))
 
-        obs_result = env.step(action_text)
-        state = env.state_dict
-        reward = float(obs_result.reward or 0.0)
-        done = bool(obs_result.done)
-        episode_result = obs_result.metadata.get("episode_result", "IN_PROGRESS")
-        summary = obs_result.metadata.get("action_summary", "")
-        obs_text = obs_result.metadata.get("pipeline_text", env._build_observation())
-        log.append(
-            {
-                "kind": "step",
-                "step": state.get("step"),
-                "action": _action_label(action_text),
-                "summary": summary,
-                "reward": reward,
-            }
-        )
-        show_real = done
-        postmortem_update = gr.update(visible=done)
-        postmortem = postmortem_html(state) if done else ""
+        obs_result   = env.step(action_text)
+        s            = env.state_dict
+        reward       = float(obs_result.reward or 0.0)
+        done         = bool(obs_result.done)
+        ep_result    = obs_result.metadata.get("episode_result", "IN_PROGRESS")
+        summary      = obs_result.metadata.get("action_summary", "")
+        obs_text     = obs_result.metadata.get("pipeline_text", env._build_observation())
+        log.append({"kind": "step", "step": s.get("step"),
+                    "action": _action_label(action_text),
+                    "summary": summary, "reward": reward})
         return (
-            env,
-            log,
-            done,
+            env, log, done,
             obs_text,
-            pipeline_html(env, show_real=show_real),
-            status_html(state),
+            pipeline_html(env, show_real=done),
+            status_html(s),
             log_html(log),
-            reward_html(
-                state.get("reward_breakdown", {}),
-                _display_total(state),
-                episode_result,
-                step_reward=reward,
-            ),
+            reward_html(s.get("reward_breakdown", {}), _display_total(s), ep_result, step_reward=reward),
             "",
-            postmortem_update,
-            postmortem,
+            gr.update(visible=done),
+            postmortem_html(s) if done else "",
             action_text,
         )
 
@@ -1704,101 +1661,64 @@ with gr.Blocks(title="Oversight Arena") as demo:
     def do_auto_step(env, log, is_done):
         if env is None:
             return _step_with_action(env, "", log, is_done)
-        action_text = _active_oracle_action(env)
-        return _step_with_action(env, action_text, log, is_done)
+        return _step_with_action(env, _active_oracle_action(env), log, is_done)
 
-    reset_btn.click(
-        do_reset,
-        inputs=[scenario_radio, difficulty_radio, seed_input],
-        outputs=_ALL_OUTPUTS,
-    )
-    step_btn.click(
-        do_manual_step,
-        inputs=[env_state, action_input, episode_log_state, episode_done_state],
-        outputs=_ALL_OUTPUTS,
-    )
-    action_input.submit(
-        do_manual_step,
-        inputs=[env_state, action_input, episode_log_state, episode_done_state],
-        outputs=_ALL_OUTPUTS,
-    )
-    auto_step_btn.click(
-        do_auto_step,
-        inputs=[env_state, episode_log_state, episode_done_state],
-        outputs=_ALL_OUTPUTS,
-    )
+    reset_btn.click(do_reset,
+        inputs=[scenario_radio, difficulty_radio, seed_input], outputs=_ALL)
+    step_btn.click(do_manual_step,
+        inputs=[env_state, action_input, episode_log_state, episode_done_state], outputs=_ALL)
+    action_input.submit(do_manual_step,
+        inputs=[env_state, action_input, episode_log_state, episode_done_state], outputs=_ALL)
+    auto_step_btn.click(do_auto_step,
+        inputs=[env_state, episode_log_state, episode_done_state], outputs=_ALL)
 
-    for idx, button in enumerate(obs_buttons, start=1):
-        button.click(
-            lambda worker_id=idx: _format_action(
-                "OBSERVE",
-                worker_id,
-                "I am checking the latest visible output before taking a stronger action.",
-            ),
-            inputs=[],
-            outputs=[action_input],
+    for idx, btn in enumerate(obs_buttons, start=1):
+        btn.click(
+            lambda wid=idx: _format_action("OBSERVE", wid, "Checking latest visible output."),
+            inputs=[], outputs=[action_input],
         )
 
     deep_btn.click(
-        lambda worker_id: _format_action(
-            "DEEP_INSPECT",
-            int(worker_id or 1),
-            "The visible output may be hiding a flaw, so I am spending inspection budget.",
-        ),
-        inputs=[action_worker_num],
-        outputs=[action_input],
-    )
+        lambda w: _format_action("DEEP_INSPECT", int(w or 1),
+                                  "Surface may hide a flaw — spending inspection budget."),
+        inputs=[action_worker_num], outputs=[action_input])
     terminate_btn.click(
-        lambda worker_id: _format_action(
-            "TERMINATE",
-            int(worker_id or 1),
-            "This worker appears unsafe to pass downstream, so I am hard resetting it.",
-        ),
-        inputs=[action_worker_num],
-        outputs=[action_input],
-    )
+        lambda w: _format_action("TERMINATE", int(w or 1),
+                                  "Worker unsafe to pass downstream — hard resetting."),
+        inputs=[action_worker_num], outputs=[action_input])
     approve_btn.click(
-        lambda worker_id: _format_action(
-            "APPROVE",
-            int(worker_id or 1),
-            "The worker appears complete and safe to pass to the next stage.",
-        ),
-        inputs=[action_worker_num],
-        outputs=[action_input],
-    )
+        lambda w: _format_action("APPROVE", int(w or 1),
+                                  "Worker appears complete and safe to advance."),
+        inputs=[action_worker_num], outputs=[action_input])
     redirect_btn.click(
-        lambda worker_id, instruction: _redirect_action(int(worker_id or 1), instruction or ""),
-        inputs=[redirect_worker_num, redirect_instr],
-        outputs=[action_input],
-    )
+        lambda w, instr: _redirect_action(int(w or 1), instr or ""),
+        inputs=[redirect_worker_num, redirect_instr], outputs=[action_input])
     show_oracle_btn.click(
         oracle_html,
-        inputs=[env_state, episode_done_state],
-        outputs=[oracle_output],
-    )
+        inputs=[env_state, episode_done_state], outputs=[oracle_output])
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  FastAPI mounting (HF Spaces)
+# ─────────────────────────────────────────────────────────────────────────────
 
 def _build_space_app() -> FastAPI:
-    """Serve Gradio at / and mount the OpenEnv API at /openenv on the same HF port."""
-    import server as _openenv_asgi
+    import server as _srv
 
     app = FastAPI(title="Oversight Arena", version="1.0.0")
 
-    @app.get("/health", tags=["Health"], summary="Space liveness")
-    def space_health():
+    @app.get("/health", tags=["Health"])
+    def _health():
         return {"status": "ok", "service": "oversight-arena"}
 
-    app.mount("/openenv", _openenv_asgi.app)
+    app.mount("/openenv", _srv.app)
     demo.max_threads = 8
     return gr.mount_gradio_app(
-        app,
-        demo,
+        app, demo,
         path="/",
         server_name="0.0.0.0",
         server_port=7860,
-        ssr_mode=False,
-        pwa=False,
-        mcp_server=False,
+        ssr_mode=False, pwa=False, mcp_server=False,
     )
 
 
