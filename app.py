@@ -1697,12 +1697,11 @@ def _action_label(action_text: str) -> str:
 #  Gradio layout
 # ─────────────────────────────────────────────────────────────────────────────
 
-with gr.Blocks(title="Oversight Arena") as demo:
+with gr.Blocks(title="Oversight Arena", css=APP_CSS) as demo:
     env_state          = gr.State(None)
     episode_log_state  = gr.State([])
     episode_done_state = gr.State(False)
 
-    gr.HTML(f"<style>{APP_CSS}</style>")
     gr.HTML(hero_html())
     gr.HTML(how_html())
 
