@@ -287,10 +287,19 @@ class HFAgent(Agent):
         use_local_files = local_files_only or _has_cached_hf_file(
             model_name, "config.json"
         )
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            model_name,
-            local_files_only=use_local_files,
-        )
+        # fix_mistral_regex is accepted via **kwargs; it does not appear in
+        # inspect.signature, so try/except is more reliable than signature checks.
+        try:
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                model_name,
+                local_files_only=use_local_files,
+                fix_mistral_regex=True,
+            )
+        except TypeError:
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                model_name,
+                local_files_only=use_local_files,
+            )
 
         # Prefer CUDA for HF rollouts. Without an explicit dtype, transformers
         # may load a 3B model in fp32 and either stay CPU-bound or heavily
@@ -310,12 +319,23 @@ class HFAgent(Agent):
 
             kw["quantization_config"] = BitsAndBytesConfig(load_in_4bit=True)
         if dtype is not None:
-            kw["torch_dtype"] = getattr(torch, dtype)
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model_name,
-            local_files_only=use_local_files,
-            **kw,
-        )
+            kw["dtype"] = getattr(torch, dtype)
+        try:
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                local_files_only=use_local_files,
+                **kw,
+            )
+        except TypeError:
+            if dtype is None:
+                raise
+            kw_fb = {k: v for k, v in kw.items() if k != "dtype"}
+            kw_fb["torch_dtype"] = getattr(torch, dtype)
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                local_files_only=use_local_files,
+                **kw_fb,
+            )
         self.model.eval()
         self.max_new_tokens = max_new_tokens
         self.temperature = temperature

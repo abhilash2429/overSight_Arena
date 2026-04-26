@@ -30,57 +30,72 @@ from oversight_arena.oracle import oracle_action
 # ─────────────────────────────────────────────────────────────────────────────
 
 APP_CSS = """
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital,wght@0,400;1,400&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
 
-/* ── tokens ───────────────────────────────────────────────────── */
+/* ─── Claude-light tokens ──────────────────────────────────────── */
 :root {
-  --void:  #100d0a;
-  --deep:  #181410;
-  --panel: rgba(24, 20, 14, 0.97);
+  /* warm cream surfaces */
+  --bg:        #faf6f1;
+  --bg-2:      #f3ece1;
+  --paper:     #ffffff;
+  --ink:       #1a1614;
+  --ink-soft:  #2c2622;
+  --muted:     #6b5d52;
+  --dim:       #a89b8e;
+  --line:      rgba(26, 22, 20, 0.10);
+  --line-soft: rgba(26, 22, 20, 0.06);
 
-  /* Claude-warm accent palette */
-  --sig:   #d07348;   /* terracotta orange — clean / safe */
-  --bad:   #c75050;   /* warm crimson — failure */
-  --wire:  #6da0bf;   /* dusty steel blue — working */
-  --warn:  #c4924a;   /* warm amber — suspicious */
-  --idle:  #3c3025;   /* warm brown idle */
+  /* Claude-warm accent palette (lighter, refined) */
+  --orange:        #c96442;   /* terracotta — primary */
+  --orange-soft:   #e9b89a;
+  --orange-tint:   rgba(201, 100, 66, 0.08);
+  --orange-line:   rgba(201, 100, 66, 0.22);
 
-  --text:  #f0e6da;   /* warm cream */
-  --muted: #9e8a78;   /* warm stone */
-  --dim:   #524438;   /* warm dim */
+  --sage:          #5b8769;   /* clean / safe */
+  --sage-tint:     rgba(91, 135, 105, 0.10);
 
-  --rim:   rgba(208, 115, 72, 0.16);
+  --crimson:       #b85c52;   /* failure / deception */
+  --crimson-tint:  rgba(184, 92, 82, 0.10);
+  --crimson-line:  rgba(184, 92, 82, 0.30);
 
-  --mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
-  --disp: 'Fraunces', 'Georgia', serif;
-  --sans: 'DM Sans', 'Helvetica Neue', sans-serif;
+  --amber:         #c79552;   /* suspicious */
+  --amber-tint:    rgba(199, 149, 82, 0.12);
 
-  --r: 6px;
+  --steel:         #6b8aa8;   /* working / info */
+  --steel-tint:    rgba(107, 138, 168, 0.10);
+
+  --plum:          #a07dd4;   /* redirected */
+
+  /* type stacks */
+  --display: 'Instrument Serif', 'Cormorant Garamond', Georgia, serif;
+  --sans:    'Geist', -apple-system, sans-serif;
+  --mono:    'Geist Mono', ui-monospace, monospace;
+
+  --r:  10px;
+  --r-sm: 6px;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* DM Sans as the readable body — mono only for data/code */
 .gradio-container,
 .gradio-container * {
   font-family: var(--sans) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .gradio-container {
-  max-width: 1540px !important;
-  background: var(--void) !important;
-  color: var(--text) !important;
+  max-width: 1480px !important;
+  background: var(--bg) !important;
+  color: var(--ink-soft) !important;
   padding: 0 !important;
   overflow-x: hidden;
 }
 
 footer { display: none !important; }
 
-/* ── warm dot grid ────────────────────────────────────────────── */
-.oa-root {
-  position: relative;
-  background: var(--void);
-}
+/* ─── soft warm grain backdrop ────────────────────────────────── */
+.oa-root { position: relative; background: var(--bg); }
 .oa-root::before {
   content: "";
   position: fixed;
@@ -88,494 +103,592 @@ footer { display: none !important; }
   z-index: 0;
   pointer-events: none;
   background-image:
-    radial-gradient(circle, rgba(208,115,72,0.07) 1px, transparent 1px);
-  background-size: 40px 40px;
+    radial-gradient(circle at 14% 8%, rgba(201,100,66,0.07), transparent 32%),
+    radial-gradient(circle at 88% 18%, rgba(107,138,168,0.05), transparent 36%);
 }
 
-/* ── hero ─────────────────────────────────────────────────────── */
+/* ─── HERO  ───────────────────────────────────────────────────── */
 .oa-hero {
   position: relative;
-  padding: 68px 60px 0;
-  overflow: hidden;
+  padding: 88px 64px 56px;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 56px;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
 }
-.oa-hero::after {
-  content: "";
-  position: absolute;
-  bottom: 0; left: 60px; right: 60px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(208,115,72,0.4) 40%, rgba(109,160,191,0.3) 70%, transparent);
-}
+.oa-hero-text { max-width: 560px; }
 
 .oa-eyebrow {
   font-family: var(--mono) !important;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--sig);
-  margin-bottom: 24px;
-  display: flex;
+  color: var(--orange);
+  margin-bottom: 28px;
+  display: inline-flex;
   align-items: center;
   gap: 12px;
 }
 .oa-eyebrow::before {
   content: "";
-  display: inline-block;
-  width: 28px;
-  height: 1px;
-  background: var(--sig);
+  width: 26px; height: 1px;
+  background: var(--orange);
   opacity: 0.55;
 }
 
 .oa-h1 {
-  font-family: var(--disp) !important;
-  font-size: clamp(54px, 8.5vw, 122px);
-  font-weight: 900;
-  line-height: 0.88;
-  letter-spacing: -0.04em;
-  color: var(--text);
+  font-family: var(--display) !important;
+  font-size: clamp(56px, 7.8vw, 104px);
+  font-weight: 400;
+  line-height: 0.96;
+  letter-spacing: -0.025em;
+  color: var(--ink);
   margin-bottom: 28px;
-  font-style: italic;
 }
-.oa-h1 em { font-style: normal; }
-.oa-h1 .hi { color: var(--sig); font-style: normal; }
-.oa-h1 .lo { color: var(--bad); font-style: normal; }
+.oa-h1 em  { font-style: italic; color: var(--ink); }
+.oa-h1 .hi { font-style: italic; color: var(--orange); font-family: var(--display); }
 
 .oa-lead {
-  max-width: 620px;
-  font-size: 15px;
-  font-weight: 300;
-  line-height: 1.75;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.62;
   color: var(--muted);
-  margin-bottom: 52px;
+  margin-bottom: 32px;
+  max-width: 520px;
 }
 
-/* ── hero SVG ─────────────────────────────────────────────────── */
+.oa-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  font-family: var(--mono) !important;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+.oa-meta span { display: inline-flex; align-items: center; gap: 8px; }
+.oa-meta span::before {
+  content: "";
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--orange);
+}
+
 .oa-hero-svg { position: relative; width: 100%; }
 .oa-hero-svg svg { width: 100%; height: auto; display: block; overflow: visible; }
 
-/* ── stat row ─────────────────────────────────────────────────── */
-.oa-stats { display: grid; grid-template-columns: repeat(5, 1fr); }
-.oa-stat {
-  padding: 22px 28px;
-  border-right: 1px solid rgba(208,115,72,0.1);
-  border-top: 1px solid rgba(208,115,72,0.1);
-  border-bottom: 1px solid rgba(208,115,72,0.1);
+/* ─── stat strip ──────────────────────────────────────────────── */
+.oa-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--line);
 }
+.oa-stat { padding: 26px 30px; border-right: 1px solid var(--line); }
 .oa-stat:last-child { border-right: none; }
 .oa-stat-lbl {
   display: block;
   font-family: var(--mono) !important;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 500;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--dim);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 .oa-stat-val {
   display: block;
-  font-family: var(--disp) !important;
-  font-size: 30px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  color: var(--text);
+  font-family: var(--display) !important;
+  font-size: 36px;
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  line-height: 1;
 }
-.oa-stat-val.g { color: var(--sig); }
-.oa-stat-val.r { color: var(--bad); }
-.oa-stat-val.w { color: var(--warn); }
+.oa-stat-val.g { color: var(--sage); }
+.oa-stat-val.r { color: var(--crimson); }
+.oa-stat-val.w { color: var(--amber); }
 
-/* ── section wrapper ──────────────────────────────────────────── */
-.oa-section { padding: 40px 60px; position: relative; }
-.oa-section-rule {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(208,115,72,0.16), transparent);
-  margin: 0 60px;
+/* ─── section frame ───────────────────────────────────────────── */
+.oa-section { padding: 56px 64px; position: relative; }
+.oa-section + .oa-section { padding-top: 0; }
+.oa-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+  margin-bottom: 28px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.oa-section-num {
+  font-family: var(--mono) !important;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--orange);
+  text-transform: uppercase;
 }
 .oa-section-title {
-  font-family: var(--disp) !important;
-  font-size: 21px;
-  font-weight: 700;
-  letter-spacing: -0.025em;
-  color: var(--text);
-  margin-bottom: 6px;
+  font-family: var(--display) !important;
+  font-size: 32px;
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: -0.02em;
+  color: var(--ink);
 }
 .oa-section-copy {
-  font-size: 13px;
-  font-weight: 300;
+  font-size: 14px;
+  font-weight: 400;
   color: var(--muted);
   line-height: 1.55;
-  max-width: 640px;
+  max-width: 540px;
+  margin-left: auto;
+  text-align: right;
 }
 
-/* ── how-to steps ─────────────────────────────────────────────── */
+/* ─── how-to steps  ───────────────────────────────────────────── */
 .oa-steps {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  border: 1px solid rgba(208,115,72,0.14);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
   border-radius: var(--r);
   overflow: hidden;
-  gap: 1px;
-  background: rgba(208,115,72,0.07);
 }
-.oa-step { padding: 24px 20px; background: var(--deep); }
+.oa-step {
+  padding: 28px 24px;
+  background: var(--paper);
+  transition: background 0.2s;
+}
+.oa-step:hover { background: var(--bg-2); }
 .oa-step-n {
-  font-family: var(--disp) !important;
-  font-size: 56px;
-  font-weight: 900;
+  font-family: var(--display) !important;
+  font-size: 64px;
+  font-weight: 400;
   font-style: italic;
-  letter-spacing: -0.05em;
-  color: rgba(208,115,72,0.13);
+  letter-spacing: -0.04em;
+  color: var(--orange-soft);
   line-height: 1;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 .oa-step-title {
   font-family: var(--mono) !important;
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--sig);
-  margin-bottom: 8px;
+  color: var(--orange);
+  margin-bottom: 10px;
 }
-.oa-step-body { font-size: 12px; font-weight: 300; line-height: 1.6; color: var(--muted); }
+.oa-step-body {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+}
 
-/* ── live node grid ───────────────────────────────────────────── */
-.oa-nodes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+/* ─── live worker grid ────────────────────────────────────────── */
+.oa-nodes {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
 .oa-node {
   position: relative;
-  border: 1px solid rgba(208,115,72,0.18);
+  border: 1px solid var(--line);
   border-radius: var(--r);
-  padding: 16px 14px 14px;
-  background: var(--panel);
+  padding: 20px 16px 16px;
+  background: var(--paper);
   overflow: hidden;
-  transition: border-color 0.25s, box-shadow 0.25s;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
+.oa-node:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(26,22,20,0.06); }
 .oa-node::before {
   content: "";
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 3px;
-  background: var(--idle);
-  transition: background 0.3s;
+  background: var(--dim);
+  opacity: 0.35;
+  transition: background 0.3s, opacity 0.3s;
 }
-.oa-node.working::before   { background: var(--wire); }
-.oa-node.completed::before { background: var(--sig); }
-.oa-node.approved::before  { background: var(--warn); }
-.oa-node.redirected::before{ background: #a07dd4; }
+.oa-node.working::before   { background: var(--steel); opacity: 1; }
+.oa-node.completed::before { background: var(--sage); opacity: 1; }
+.oa-node.approved::before  { background: var(--amber); opacity: 1; }
+.oa-node.redirected::before{ background: var(--plum); opacity: 1; }
 
 .oa-node.hot {
-  border-color: rgba(196,146,74,0.5);
-  box-shadow: 0 0 20px rgba(196,146,74,0.1);
+  border-color: var(--amber);
+  box-shadow: 0 0 0 1px var(--amber-tint), 0 8px 24px rgba(199,149,82,0.12);
   animation: hotPulse 2s ease-in-out infinite;
 }
-.oa-node.hot::before { background: var(--warn); }
+.oa-node.hot::before { background: var(--amber); opacity: 1; }
 
-.oa-node.exposed { border-color: rgba(199,80,80,0.55); box-shadow: 0 0 24px rgba(199,80,80,0.12); }
-.oa-node.exposed::before { background: var(--bad); animation: redFlash 0.9s ease-in-out infinite; }
+.oa-node.exposed {
+  border-color: var(--crimson);
+  box-shadow: 0 0 0 1px var(--crimson-tint), 0 8px 24px rgba(184,92,82,0.18);
+}
+.oa-node.exposed::before { background: var(--crimson); opacity: 1; animation: redFlash 1s ease-in-out infinite; }
 
-.oa-node.truth-fail { border-color: rgba(199,80,80,0.5); }
-.oa-node.truth-clean { border-color: rgba(208,115,72,0.4); }
+.oa-node.truth-fail  { border-color: var(--crimson); }
+.oa-node.truth-clean { border-color: var(--orange); }
 
 .oa-node-id {
-  font-family: var(--disp) !important;
-  font-size: 44px;
-  font-weight: 900;
+  font-family: var(--display) !important;
+  font-size: 56px;
+  font-weight: 400;
   font-style: italic;
-  letter-spacing: -0.05em;
-  color: var(--text);
-  line-height: 1;
-  margin-bottom: 3px;
+  letter-spacing: -0.04em;
+  color: var(--ink);
+  line-height: 0.95;
+  margin-bottom: 4px;
 }
 .oa-node-role {
   font-family: var(--mono) !important;
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--sig);
-  margin-bottom: 10px;
+  color: var(--orange);
+  margin-bottom: 14px;
 }
 .oa-node-badge {
   display: inline-block;
-  padding: 3px 8px;
-  border-radius: 3px;
+  padding: 4px 9px;
+  border-radius: 4px;
   font-family: var(--mono) !important;
-  font-size: 8.5px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  border: 1px solid var(--dim);
+  border: 1px solid var(--line);
   color: var(--muted);
-  margin-bottom: 10px;
+  background: var(--bg);
+  margin-bottom: 12px;
 }
-.oa-node-badge.g { border-color: rgba(208,115,72,0.4); color: var(--sig); background: rgba(208,115,72,0.08); }
-.oa-node-badge.r { border-color: rgba(199,80,80,0.4); color: var(--bad); background: rgba(199,80,80,0.08); }
-.oa-node-badge.w { border-color: rgba(196,146,74,0.4); color: var(--warn); background: rgba(196,146,74,0.08); }
-.oa-node-badge.b { border-color: rgba(109,160,191,0.4); color: var(--wire); background: rgba(109,160,191,0.08); }
+.oa-node-badge.g { border-color: rgba(91,135,105,0.4); color: var(--sage); background: var(--sage-tint); }
+.oa-node-badge.r { border-color: var(--crimson-line);  color: var(--crimson); background: var(--crimson-tint); }
+.oa-node-badge.w { border-color: rgba(199,149,82,0.4); color: var(--amber); background: var(--amber-tint); }
+.oa-node-badge.b { border-color: rgba(107,138,168,0.4); color: var(--steel); background: var(--steel-tint); }
 
 .oa-node-task {
   font-family: var(--mono) !important;
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-weight: 500;
-  color: var(--muted);
+  color: var(--ink-soft);
   margin-bottom: 5px;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
 }
-.oa-node-desc { font-size: 11px; font-weight: 300; line-height: 1.45; color: var(--dim); margin-bottom: 10px; }
+.oa-node-desc {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
 .oa-node-snippet {
-  padding: 9px 10px;
-  background: rgba(0,0,0,0.35);
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 3px;
+  padding: 10px 11px;
+  background: var(--bg-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-sm);
   font-family: var(--mono) !important;
-  font-size: 9px;
+  font-size: 9.5px;
   line-height: 1.55;
-  color: rgba(240,220,200,0.38);
-  max-height: 68px;
+  color: var(--muted);
+  max-height: 72px;
   overflow: hidden;
   white-space: pre-wrap;
   word-break: break-all;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 .oa-node-tags { display: flex; flex-wrap: wrap; gap: 5px; }
 .oa-tag {
   font-family: var(--mono) !important;
-  font-size: 8.5px;
+  font-size: 9px;
+  font-weight: 500;
   padding: 3px 7px;
-  border: 1px solid var(--dim);
-  border-radius: 3px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
   color: var(--muted);
+  background: var(--paper);
 }
-.oa-tag.hot { border-color: rgba(196,146,74,0.42); color: var(--warn); }
-.oa-tag.red { border-color: rgba(199,80,80,0.4);   color: var(--bad); }
-.oa-tag.grn { border-color: rgba(208,115,72,0.38); color: var(--sig); }
+.oa-tag.hot { border-color: rgba(199,149,82,0.4); color: var(--amber); background: var(--amber-tint); }
+.oa-tag.red { border-color: var(--crimson-line);  color: var(--crimson); background: var(--crimson-tint); }
+.oa-tag.grn { border-color: rgba(91,135,105,0.4); color: var(--sage); background: var(--sage-tint); }
 
-/* ── SVG pipeline bar ─────────────────────────────────────────── */
+/* ─── live SVG pipeline bar ──────────────────────────────────── */
 .oa-pipe-bar {
-  margin-bottom: 20px;
-  border: 1px solid rgba(208,115,72,0.12);
+  margin-bottom: 24px;
+  border: 1px solid var(--line);
   border-radius: var(--r);
   overflow: hidden;
-  background: rgba(0,0,0,0.3);
+  background: var(--paper);
 }
 .oa-pipe-bar svg { display: block; width: 100%; height: auto; }
 
-/* ── console panel ────────────────────────────────────────────── */
+/* ─── card / console panel ───────────────────────────────────── */
 .oa-console {
-  border: 1px solid rgba(208,115,72,0.2);
+  border: 1px solid var(--line);
   border-radius: var(--r);
   overflow: hidden;
-  background: var(--panel);
+  background: var(--paper);
 }
 .oa-console-hdr {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 11px 16px;
-  background: rgba(208,115,72,0.07);
-  border-bottom: 1px solid rgba(208,115,72,0.12);
+  gap: 10px;
+  padding: 14px 18px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--line-soft);
   font-family: var(--mono) !important;
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--sig);
+  color: var(--ink-soft);
 }
 .oa-dot {
   width: 7px; height: 7px;
   border-radius: 50%;
-  background: var(--sig);
-  animation: blink 1.4s ease-in-out infinite;
+  background: var(--orange);
+  animation: blink 1.5s ease-in-out infinite;
 }
-.oa-dot.r { background: var(--bad); }
-.oa-dot.w { background: var(--warn); }
+.oa-dot.r { background: var(--crimson); }
+.oa-dot.w { background: var(--amber); }
 
-/* ── log ──────────────────────────────────────────────────────── */
-.oa-log { font-size: 12px; }
+/* ─── log ────────────────────────────────────────────────────── */
+.oa-log { font-size: 13px; }
 .oa-log-row {
   display: grid;
-  grid-template-columns: 52px 1fr 72px;
-  gap: 10px;
-  padding: 11px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  grid-template-columns: 50px 1fr 78px;
+  gap: 14px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--line-soft);
   animation: fadeUp 0.25s ease-out;
 }
 .oa-log-row:last-child { border-bottom: none; }
 .oa-log-n  { font-family: var(--mono) !important; color: var(--dim); font-size: 11px; }
-.oa-log-a  { color: var(--wire); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.oa-log-r  { font-family: var(--mono) !important; text-align: right; font-weight: 700; font-size: 11px; }
-.oa-log-r.p{ color: var(--sig); }
-.oa-log-r.n{ color: var(--bad); }
-.oa-log-sub { grid-column: 2/4; font-size: 11px; font-weight: 300; color: var(--muted); margin-top: -4px; padding-bottom: 6px; }
+.oa-log-a  { color: var(--ink-soft); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.oa-log-r  { font-family: var(--mono) !important; text-align: right; font-weight: 600; font-size: 11.5px; }
+.oa-log-r.p{ color: var(--sage); }
+.oa-log-r.n{ color: var(--crimson); }
+.oa-log-sub {
+  grid-column: 2/4;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: -6px;
+  padding-bottom: 6px;
+}
 
-/* ── reward panel ─────────────────────────────────────────────── */
+/* ─── reward grid ────────────────────────────────────────────── */
 .oa-reward-grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 1px;
-  background: rgba(208,115,72,0.07);
+  background: var(--line);
   border-radius: var(--r);
   overflow: hidden;
 }
-.oa-rcard { padding: 13px 14px; background: var(--deep); }
+.oa-rcard { padding: 16px 16px; background: var(--paper); }
 .oa-rcard-lbl {
   font-family: var(--mono) !important;
-  font-size: 8.5px;
+  font-size: 9.5px;
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--dim);
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
 }
 .oa-rcard-val {
-  font-family: var(--disp) !important;
-  font-size: 21px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  font-family: var(--display) !important;
+  font-size: 26px;
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: -0.02em;
+  color: var(--ink);
 }
-.oa-rcard-val.p { color: var(--sig); }
-.oa-rcard-val.n { color: var(--bad); }
+.oa-rcard-val.p { color: var(--sage); }
+.oa-rcard-val.n { color: var(--crimson); }
 .oa-rcard-val.z { color: var(--dim); }
 
-/* ── oracle panel ─────────────────────────────────────────────── */
+/* ─── oracle panel ───────────────────────────────────────────── */
 .oa-oracle-wrap {
-  border: 1px solid rgba(196,146,74,0.22);
+  border: 1px solid rgba(199,149,82,0.3);
   border-radius: var(--r);
   overflow: hidden;
-  background: rgba(196,146,74,0.03);
+  background: var(--amber-tint);
 }
 .oa-oracle-hdr {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 11px 16px;
-  background: rgba(196,146,74,0.07);
-  border-bottom: 1px solid rgba(196,146,74,0.12);
+  gap: 10px;
+  padding: 14px 18px;
+  background: rgba(199,149,82,0.14);
+  border-bottom: 1px solid rgba(199,149,82,0.22);
   font-family: var(--mono) !important;
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--warn);
+  color: #8c6429;
 }
 
-/* ── post-mortem ──────────────────────────────────────────────── */
-.oa-pm { padding: 0 60px 60px; }
+/* ─── post-mortem ────────────────────────────────────────────── */
+.oa-pm { padding: 0 64px 72px; }
 .oa-pm-hdr {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 32px 0 22px;
-  border-top: 1px solid rgba(208,115,72,0.14);
+  gap: 20px;
+  padding: 40px 0 28px;
+  border-top: 1px solid var(--line);
 }
 .oa-pm-title {
-  font-family: var(--disp) !important;
-  font-size: 36px;
-  font-weight: 900;
+  font-family: var(--display) !important;
+  font-size: 48px;
+  font-weight: 400;
   font-style: italic;
-  letter-spacing: -0.03em;
-  color: var(--text);
+  letter-spacing: -0.02em;
+  color: var(--ink);
 }
-.oa-pm-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; }
-.oa-table { width: 100%; border-collapse: collapse; font-size: 12px; border-radius: var(--r); overflow: hidden; }
+.oa-pm-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
+.oa-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  border-radius: var(--r);
+  overflow: hidden;
+  background: var(--paper);
+  border: 1px solid var(--line);
+}
 .oa-table th {
-  padding: 10px 14px;
+  padding: 12px 16px;
   text-align: left;
-  background: rgba(208,115,72,0.07);
+  background: var(--bg-2);
   font-family: var(--mono) !important;
-  color: var(--dim);
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
+  color: var(--muted);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  border-bottom: 1px solid rgba(208,115,72,0.12);
+  border-bottom: 1px solid var(--line);
 }
 .oa-table td {
-  padding: 10px 14px;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-  color: var(--muted);
-  font-weight: 300;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--ink-soft);
+  font-weight: 400;
 }
-.oa-table td.caught { color: var(--sig); font-weight: 500; }
-.oa-table td.missed { color: var(--bad); font-weight: 500; }
-.oa-table td.clean  { color: var(--wire); }
+.oa-table tr:last-child td { border-bottom: none; }
+.oa-table td.caught { color: var(--sage); font-weight: 500; }
+.oa-table td.missed { color: var(--crimson); font-weight: 500; }
+.oa-table td.clean  { color: var(--steel); }
 
 .oa-pm-side {
-  padding: 22px;
-  border: 1px solid rgba(208,115,72,0.15);
+  padding: 24px;
+  border: 1px solid var(--orange-line);
   border-radius: var(--r);
-  background: rgba(208,115,72,0.04);
+  background: var(--orange-tint);
 }
 
-/* ── verdict badge ────────────────────────────────────────────── */
+/* ─── verdict badge ──────────────────────────────────────────── */
 .oa-verdict {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 4px;
+  gap: 10px;
+  padding: 10px 18px;
+  border-radius: 6px;
   font-family: var(--mono) !important;
-  font-size: 9.5px;
-  font-weight: 700;
+  font-size: 10.5px;
+  font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
-.oa-verdict.clean   { background: rgba(208,115,72,0.12); border: 1px solid rgba(208,115,72,0.38); color: var(--sig); }
-.oa-verdict.dirty   { background: rgba(199,80,80,0.1);   border: 1px solid rgba(199,80,80,0.38);   color: var(--bad); }
-.oa-verdict.timeout { background: rgba(196,146,74,0.1);  border: 1px solid rgba(196,146,74,0.38);  color: var(--warn); }
+.oa-verdict.clean   { background: var(--sage-tint);    border: 1px solid rgba(91,135,105,0.4); color: var(--sage); }
+.oa-verdict.dirty   { background: var(--crimson-tint); border: 1px solid var(--crimson-line);  color: var(--crimson); }
+.oa-verdict.timeout { background: var(--amber-tint);   border: 1px solid rgba(199,149,82,0.4); color: var(--amber); }
 
-/* ── empty state ──────────────────────────────────────────────── */
+/* ─── empty state ────────────────────────────────────────────── */
 .oa-empty {
-  padding: 28px 20px;
+  padding: 32px 22px;
   text-align: center;
-  font-size: 13px;
-  font-weight: 300;
-  color: var(--dim);
-  border: 1px dashed rgba(208,115,72,0.15);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--muted);
+  font-family: var(--display) !important;
+  font-style: italic;
+  border: 1px dashed var(--line);
   border-radius: var(--r);
+  background: var(--bg-2);
 }
 
-/* ── Gradio overrides ─────────────────────────────────────────── */
+/* ─── Gradio overrides ───────────────────────────────────────── */
 .obs-text textarea, .act-text textarea {
-  background: rgba(0,0,0,0.5) !important;
-  border: 1px solid rgba(208,115,72,0.2) !important;
-  border-radius: 4px !important;
-  color: rgba(240,220,200,0.82) !important;
+  background: var(--paper) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--r-sm) !important;
+  color: var(--ink-soft) !important;
   font-family: var(--mono) !important;
-  font-size: 11.5px !important;
-  line-height: 1.6 !important;
-  padding: 14px !important;
+  font-size: 12px !important;
+  line-height: 1.65 !important;
+  padding: 16px !important;
 }
-.act-text textarea { color: var(--sig) !important; }
+.act-text textarea {
+  background: var(--orange-tint) !important;
+  border-color: var(--orange-line) !important;
+  color: var(--ink) !important;
+}
 
 button[class*="primary"], .gr-button-primary {
-  background: var(--sig) !important;
-  color: #fff !important;
+  background: var(--ink) !important;
+  color: var(--bg) !important;
   border: none !important;
-  border-radius: var(--r) !important;
+  border-radius: var(--r-sm) !important;
   font-family: var(--sans) !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.04em !important;
-  transition: opacity 0.15s !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em !important;
+  padding: 10px 20px !important;
+  transition: opacity 0.18s, transform 0.18s !important;
 }
-button[class*="primary"]:hover { opacity: 0.82 !important; }
+button[class*="primary"]:hover { opacity: 0.88 !important; transform: translateY(-1px); }
 
 button[class*="secondary"], .gr-button-secondary {
-  background: transparent !important;
-  color: var(--sig) !important;
-  border: 1px solid rgba(208,115,72,0.32) !important;
-  border-radius: var(--r) !important;
+  background: var(--paper) !important;
+  color: var(--ink-soft) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--r-sm) !important;
   font-family: var(--sans) !important;
-  font-size: 11px !important;
+  font-size: 12px !important;
   font-weight: 500 !important;
 }
+button[class*="secondary"]:hover {
+  background: var(--bg-2) !important;
+  border-color: var(--orange) !important;
+  color: var(--orange) !important;
+}
 
-/* ── SVG animation keyframes ──────────────────────────────────── */
+/* generic small Gradio buttons */
+.gradio-container button {
+  font-family: var(--sans) !important;
+}
+
+/* radio + number labels */
+.gradio-container label,
+.gradio-container .label-wrap span {
+  font-family: var(--mono) !important;
+  font-size: 10.5px !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  color: var(--muted) !important;
+}
+
+/* ─── SVG keyframes ──────────────────────────────────────────── */
 @keyframes flowPkt {
   0%   { offset-distance: 0%;   opacity: 0; }
   6%   { opacity: 1; }
@@ -586,72 +699,76 @@ button[class*="secondary"], .gr-button-secondary {
   0%   { offset-distance: 0%;  opacity: 0;   transform: scale(1); }
   8%   { opacity: 1; }
   50%  { opacity: 1;  transform: scale(1); }
-  60%  { transform: scale(2.2); opacity: 0.5; }
+  60%  { transform: scale(2.4); opacity: 0.5; }
   68%  { transform: scale(0.1); opacity: 0; }
   100% { offset-distance: 62%; opacity: 0; }
 }
 @keyframes dashScroll { to { stroke-dashoffset: -40; } }
 @keyframes glitchSurface {
   0%,80%,100% { filter: none; transform: none; clip-path: none; }
-  82% { transform: translate(-3px,1px); filter: hue-rotate(80deg) saturate(3) brightness(1.3); }
+  82% { transform: translate(-3px,1px); filter: hue-rotate(60deg) saturate(2.4) brightness(1.05); }
   85% { transform: translate(3px,-2px); clip-path: polygon(0 18%,100% 18%,100% 46%,0 46%); filter: none; }
   88% { transform: translate(-1px,0); }
 }
 @keyframes scanArc {
-  0%,100% { opacity: 0.22; transform: scale(0.93); }
+  0%,100% { opacity: 0.28; transform: scale(0.93); }
   50%     { opacity: 1;    transform: scale(1.06); }
 }
 @keyframes popReveal {
-  0%,35%  { opacity: 0; transform: translateY(14px) scale(0.88); }
-  48%,88% { opacity: 1; transform: translateY(0)    scale(1);    }
-  98%,100%{ opacity: 0; transform: translateY(-8px)  scale(0.94); }
+  0%,32%  { opacity: 0; transform: translateY(14px) scale(0.86); }
+  46%,86% { opacity: 1; transform: translateY(0)    scale(1);    }
+  98%,100%{ opacity: 0; transform: translateY(-8px) scale(0.94); }
 }
 @keyframes hotPulse {
-  0%,100%{ box-shadow: 0 0 0 0 rgba(196,146,74,0); }
-  50%    { box-shadow: 0 0 20px 4px rgba(196,146,74,0.16); }
+  0%,100%{ box-shadow: 0 0 0 0 rgba(199,149,82,0); }
+  50%    { box-shadow: 0 0 24px 4px rgba(199,149,82,0.15); }
 }
 @keyframes redFlash {
-  0%,100%{ background: var(--bad); }
-  50%    { background: rgba(199,80,80,0.25); }
+  0%,100%{ opacity: 1; }
+  50%    { opacity: 0.45; }
 }
 @keyframes blink {
   0%,100%{ opacity: 1; }
-  50%    { opacity: 0.25; }
+  50%    { opacity: 0.3; }
 }
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes heroIn {
-  from { opacity: 0; transform: translateY(26px); }
+  from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 .pkt-clean {
   offset-path: path("M72 182 L1160 182");
-  animation: flowPkt 3.4s linear infinite;
+  animation: flowPkt 3.6s linear infinite;
 }
 .pkt-bad {
   offset-path: path("M72 182 L1160 182");
-  animation: badPkt 3.4s linear infinite;
-  animation-delay: 1.5s;
+  animation: badPkt 3.6s linear infinite;
+  animation-delay: 1.6s;
 }
 .dash-flow  { stroke-dasharray: 12 14; animation: dashScroll 1.8s linear infinite; }
-.glitch-node{ animation: glitchSurface 5s ease-in-out infinite; animation-delay: 0.8s; }
+.glitch-node{ animation: glitchSurface 5.5s ease-in-out infinite; animation-delay: 0.8s; }
 .scan-ring  { transform-origin: 50% 50%; animation: scanArc 2s ease-in-out infinite; }
-.pop-reveal { animation: popReveal 3.4s ease-in-out infinite; animation-delay: 1.2s; }
-.hero-in    { animation: heroIn 0.8s ease-out both; }
-.hero-in-2  { animation: heroIn 0.8s 0.15s ease-out both; }
-.hero-in-3  { animation: heroIn 0.8s 0.32s ease-out both; }
+.pop-reveal { animation: popReveal 3.6s ease-in-out infinite; animation-delay: 1.2s; }
+.hero-in    { animation: heroIn 0.9s ease-out both; }
+.hero-in-2  { animation: heroIn 0.9s 0.18s ease-out both; }
+.hero-in-3  { animation: heroIn 0.9s 0.34s ease-out both; }
+.hero-in-4  { animation: heroIn 0.9s 0.5s ease-out both; }
 
-/* ── responsive ───────────────────────────────────────────────── */
+/* ─── responsive ─────────────────────────────────────────────── */
 @media (max-width: 1100px) {
+  .oa-hero { grid-template-columns: 1fr; gap: 36px; padding: 64px 32px 40px; }
   .oa-nodes, .oa-stats, .oa-steps { grid-template-columns: repeat(2,1fr); }
   .oa-pm-grid { grid-template-columns: 1fr; }
+  .oa-section, .oa-pm { padding-left: 32px; padding-right: 32px; }
 }
 @media (max-width: 680px) {
   .oa-nodes, .oa-stats, .oa-steps, .oa-reward-grid { grid-template-columns: 1fr; }
   .oa-hero, .oa-section, .oa-pm { padding-left: 20px; padding-right: 20px; }
+  .oa-section-copy { text-align: left; }
 }
 """
 
@@ -716,195 +833,212 @@ def _display_total(state: dict[str, Any]) -> float:
 def hero_html() -> str:
     return """
 <div class="oa-hero oa-root">
-  <div class="oa-eyebrow hero-in">real environment · no fake demos · deterministic + seedable</div>
+  <div class="oa-hero-text">
+    <div class="oa-eyebrow hero-in">Oversight Arena · v1.0</div>
 
-  <h1 class="oa-h1 hero-in-2">
-    Catch the<br/>
-    failure that<br/>
-    looks <span class="hi">safe.</span>
-  </h1>
+    <h1 class="oa-h1 hero-in-2">
+      Catch the<br/>
+      failure that<br/>
+      <em>looks</em> <span class="hi">safe.</span>
+    </h1>
 
-  <p class="oa-lead hero-in-3">
-    Five deterministic AI workers run a software-delivery pipeline.
-    One produces output that looks clean on the surface — but hides a flaw
-    only revealed by deliberate deep inspection.
-    Can a supervisor LLM learn when to look deeper?
-  </p>
+    <p class="oa-lead hero-in-3">
+      Five deterministic AI workers run a software-delivery pipeline.
+      One produces output that <em>looks clean</em> on the surface — but hides a
+      flaw only revealed by deliberate deep inspection.
+      Can a supervisor LLM learn when to look deeper?
+    </p>
 
-  <div class="oa-hero-svg">
-    <svg viewBox="0 0 1240 360" aria-label="Animated oversight pipeline" role="img">
+    <div class="oa-meta hero-in-4">
+      <span>real environment</span>
+      <span>no fake demos</span>
+      <span>deterministic + seedable</span>
+    </div>
+  </div>
+
+  <div class="oa-hero-svg hero-in-3">
+    <svg viewBox="0 0 1240 400" aria-label="Animated oversight pipeline" role="img">
       <defs>
         <filter id="glow0">
-          <feGaussianBlur stdDeviation="5" result="b"/>
+          <feGaussianBlur stdDeviation="4" result="b"/>
           <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
         <filter id="glow1">
-          <feGaussianBlur stdDeviation="11" result="b"/>
+          <feGaussianBlur stdDeviation="8" result="b"/>
           <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
         <radialGradient id="scanGrad" cx="50%" cy="50%" r="50%">
-          <stop offset="0%"   stop-color="#d07348" stop-opacity="0.28"/>
-          <stop offset="100%" stop-color="#d07348" stop-opacity="0"/>
+          <stop offset="0%"   stop-color="#c96442" stop-opacity="0.22"/>
+          <stop offset="100%" stop-color="#c96442" stop-opacity="0"/>
         </radialGradient>
         <radialGradient id="badGrad" cx="50%" cy="50%" r="50%">
-          <stop offset="0%"   stop-color="#c75050" stop-opacity="0.28"/>
-          <stop offset="100%" stop-color="#c75050" stop-opacity="0"/>
+          <stop offset="0%"   stop-color="#b85c52" stop-opacity="0.28"/>
+          <stop offset="100%" stop-color="#b85c52" stop-opacity="0"/>
         </radialGradient>
-        <pattern id="hdots" x="0" y="0" width="52" height="52" patternUnits="userSpaceOnUse">
-          <circle cx="26" cy="26" r="1.2" fill="rgba(208,115,72,0.07)"/>
+        <pattern id="hdots" x="0" y="0" width="48" height="48" patternUnits="userSpaceOnUse">
+          <circle cx="24" cy="24" r="1.1" fill="rgba(26,22,20,0.08)"/>
         </pattern>
       </defs>
 
-      <!-- background dot grid -->
-      <rect width="1240" height="360" fill="url(#hdots)"/>
+      <rect width="1240" height="400" fill="url(#hdots)"/>
 
       <!-- pipeline backbone -->
-      <line x1="80" y1="182" x2="1160" y2="182"
-            stroke="rgba(208,115,72,0.12)" stroke-width="8" stroke-linecap="round"/>
-      <!-- animated dashes -->
-      <line class="dash-flow" x1="80" y1="182" x2="1160" y2="182"
-            stroke="#6da0bf" stroke-opacity="0.5" stroke-width="2.5"
+      <line x1="80" y1="200" x2="1160" y2="200"
+            stroke="rgba(26,22,20,0.10)" stroke-width="6" stroke-linecap="round"/>
+      <line class="dash-flow" x1="80" y1="200" x2="1160" y2="200"
+            stroke="#c96442" stroke-opacity="0.55" stroke-width="2"
             fill="none" stroke-dasharray="12 14"/>
 
       <!-- ── W1 ── -->
-      <g transform="translate(38 122)">
-        <rect width="120" height="120" rx="6"
-              fill="rgba(24,20,14,0.97)" stroke="#6da0bf" stroke-width="1.5"/>
-        <rect x="0" y="0" width="120" height="3" rx="6" fill="#6da0bf"/>
-        <text x="60" y="52" text-anchor="middle"
-              fill="#f0e6da" font-family="Fraunces,serif"
-              font-size="38" font-weight="900" font-style="italic" letter-spacing="-2">W1</text>
-        <text x="60" y="74" text-anchor="middle"
-              fill="#6da0bf" font-family="'JetBrains Mono',monospace"
-              font-size="8.5" font-weight="700" letter-spacing="2.5">REQ ANALYST</text>
-        <text x="60" y="96" text-anchor="middle"
-              fill="#524438" font-family="'JetBrains Mono',monospace"
-              font-size="8.5" letter-spacing="1.5">WORKING</text>
+      <g transform="translate(38 134)">
+        <rect width="130" height="132" rx="8"
+              fill="#ffffff" stroke="rgba(26,22,20,0.12)" stroke-width="1"/>
+        <rect x="0" y="0" width="130" height="3" rx="8" fill="#6b8aa8"/>
+        <text x="14" y="44"
+              fill="#1a1614" font-family="Instrument Serif,serif"
+              font-size="44" font-weight="400" font-style="italic" letter-spacing="-2">W1</text>
+        <text x="14" y="74"
+              fill="#c96442" font-family="Geist Mono,monospace"
+              font-size="9" font-weight="600" letter-spacing="1.6">REQ ANALYST</text>
+        <rect x="14" y="92" width="56" height="20" rx="3"
+              fill="rgba(107,138,168,0.10)" stroke="rgba(107,138,168,0.40)"/>
+        <text x="42" y="106" text-anchor="middle"
+              fill="#6b8aa8" font-family="Geist Mono,monospace"
+              font-size="8.5" font-weight="600" letter-spacing="1">WORKING</text>
       </g>
 
       <!-- ── W2 ── -->
-      <g transform="translate(258 122)">
-        <rect width="120" height="120" rx="6"
-              fill="rgba(24,20,14,0.97)" stroke="#6da0bf" stroke-width="1.5"/>
-        <rect x="0" y="0" width="120" height="3" rx="6" fill="#6da0bf"/>
-        <text x="60" y="52" text-anchor="middle"
-              fill="#f0e6da" font-family="Fraunces,serif"
-              font-size="38" font-weight="900" font-style="italic" letter-spacing="-2">W2</text>
-        <text x="60" y="74" text-anchor="middle"
-              fill="#6da0bf" font-family="'JetBrains Mono',monospace"
-              font-size="8.5" font-weight="700" letter-spacing="2.5">CODE GEN</text>
-        <text x="60" y="96" text-anchor="middle"
-              fill="#524438" font-family="'JetBrains Mono',monospace"
-              font-size="8.5" letter-spacing="1.5">WORKING</text>
+      <g transform="translate(258 134)">
+        <rect width="130" height="132" rx="8"
+              fill="#ffffff" stroke="rgba(26,22,20,0.12)" stroke-width="1"/>
+        <rect x="0" y="0" width="130" height="3" rx="8" fill="#6b8aa8"/>
+        <text x="14" y="44"
+              fill="#1a1614" font-family="Instrument Serif,serif"
+              font-size="44" font-weight="400" font-style="italic" letter-spacing="-2">W2</text>
+        <text x="14" y="74"
+              fill="#c96442" font-family="Geist Mono,monospace"
+              font-size="9" font-weight="600" letter-spacing="1.6">CODE GEN</text>
+        <rect x="14" y="92" width="56" height="20" rx="3"
+              fill="rgba(107,138,168,0.10)" stroke="rgba(107,138,168,0.40)"/>
+        <text x="42" y="106" text-anchor="middle"
+              fill="#6b8aa8" font-family="Geist Mono,monospace"
+              font-size="8.5" font-weight="600" letter-spacing="1">WORKING</text>
       </g>
 
-      <!-- ── W3 DECEPTIVE — warm surface with hidden red interior ── -->
-      <g transform="translate(478 104)">
-        <circle cx="60" cy="78" r="68" fill="url(#badGrad)"/>
-        <rect width="120" height="156" rx="6"
-              fill="rgba(22,10,10,0.98)" stroke="rgba(199,80,80,0.32)" stroke-width="1.5"/>
+      <!-- ── W3 DECEPTIVE ── -->
+      <g transform="translate(478 110)">
+        <circle cx="65" cy="90" r="78" fill="url(#badGrad)"/>
         <g class="glitch-node">
-          <rect width="120" height="156" rx="6"
-                fill="rgba(24,20,14,0.97)" stroke="#6da0bf" stroke-width="1.5"/>
-          <rect x="0" y="0" width="120" height="3" rx="6" fill="#6da0bf"/>
-          <text x="60" y="52" text-anchor="middle"
-                fill="#f0e6da" font-family="Fraunces,serif"
-                font-size="38" font-weight="900" font-style="italic" letter-spacing="-2">W3</text>
-          <text x="60" y="74" text-anchor="middle"
-                fill="#6da0bf" font-family="'JetBrains Mono',monospace"
-                font-size="8.5" font-weight="700" letter-spacing="2.5">TEST GEN</text>
-          <text x="60" y="96" text-anchor="middle"
-                fill="#524438" font-family="'JetBrains Mono',monospace"
-                font-size="8.5" letter-spacing="1.5">WORKING</text>
-          <rect x="8" y="112" width="104" height="34" rx="4"
-                fill="rgba(199,80,80,0.13)" stroke="rgba(199,80,80,0.42)" stroke-width="1"/>
-          <text x="60" y="126" text-anchor="middle"
-                fill="#c75050" font-family="'JetBrains Mono',monospace"
-                font-size="8" font-weight="700" letter-spacing="1.5">HIDDEN FLAW</text>
-          <text x="60" y="138" text-anchor="middle"
-                fill="rgba(199,80,80,0.6)" font-family="'JetBrains Mono',monospace"
+          <rect width="130" height="180" rx="8"
+                fill="#ffffff" stroke="rgba(184,92,82,0.45)" stroke-width="1.2"/>
+          <rect x="0" y="0" width="130" height="3" rx="8" fill="#b85c52"/>
+          <text x="14" y="44"
+                fill="#1a1614" font-family="Instrument Serif,serif"
+                font-size="44" font-weight="400" font-style="italic" letter-spacing="-2">W3</text>
+          <text x="14" y="74"
+                fill="#c96442" font-family="Geist Mono,monospace"
+                font-size="9" font-weight="600" letter-spacing="1.6">TEST GEN</text>
+          <rect x="14" y="92" width="62" height="20" rx="3"
+                fill="rgba(91,135,105,0.10)" stroke="rgba(91,135,105,0.40)"/>
+          <text x="45" y="106" text-anchor="middle"
+                fill="#5b8769" font-family="Geist Mono,monospace"
+                font-size="8.5" font-weight="600" letter-spacing="1">PASSING</text>
+
+          <rect x="10" y="124" width="110" height="46" rx="4"
+                fill="rgba(184,92,82,0.10)" stroke="rgba(184,92,82,0.42)" stroke-width="1"/>
+          <text x="65" y="140" text-anchor="middle"
+                fill="#b85c52" font-family="Geist Mono,monospace"
+                font-size="8" font-weight="700" letter-spacing="1.4">HIDDEN FLAW</text>
+          <text x="65" y="155" text-anchor="middle"
+                fill="rgba(184,92,82,0.75)" font-family="Geist Mono,monospace"
                 font-size="7.5">missing tenant isolation</text>
+          <text x="65" y="166" text-anchor="middle"
+                fill="rgba(184,92,82,0.55)" font-family="Geist Mono,monospace"
+                font-size="7">surface output: clean ✓</text>
         </g>
       </g>
 
-      <!-- ── W4 ── (dimmed, idle) -->
-      <g transform="translate(698 122)">
-        <rect width="120" height="120" rx="6"
-              fill="rgba(24,20,14,0.97)" stroke="rgba(109,160,191,0.22)" stroke-width="1.5"/>
-        <rect x="0" y="0" width="120" height="3" rx="6" fill="rgba(109,160,191,0.22)"/>
-        <text x="60" y="52" text-anchor="middle"
-              fill="rgba(240,220,200,0.32)" font-family="Fraunces,serif"
-              font-size="38" font-weight="900" font-style="italic" letter-spacing="-2">W4</text>
-        <text x="60" y="74" text-anchor="middle"
-              fill="#524438" font-family="'JetBrains Mono',monospace"
-              font-size="8.5" font-weight="700" letter-spacing="2.5">SEC REVIEW</text>
-        <text x="60" y="96" text-anchor="middle"
-              fill="#524438" font-family="'JetBrains Mono',monospace"
-              font-size="8.5" letter-spacing="1.5">IDLE</text>
+      <!-- ── W4 IDLE ── -->
+      <g transform="translate(698 134)">
+        <rect width="130" height="132" rx="8"
+              fill="#faf6f1" stroke="rgba(26,22,20,0.10)" stroke-width="1"/>
+        <rect x="0" y="0" width="130" height="3" rx="8" fill="rgba(26,22,20,0.10)"/>
+        <text x="14" y="44"
+              fill="rgba(26,22,20,0.32)" font-family="Instrument Serif,serif"
+              font-size="44" font-weight="400" font-style="italic" letter-spacing="-2">W4</text>
+        <text x="14" y="74"
+              fill="rgba(168,155,142,0.9)" font-family="Geist Mono,monospace"
+              font-size="9" font-weight="600" letter-spacing="1.6">SEC REVIEW</text>
+        <rect x="14" y="92" width="40" height="20" rx="3"
+              fill="rgba(168,155,142,0.10)" stroke="rgba(168,155,142,0.30)"/>
+        <text x="34" y="106" text-anchor="middle"
+              fill="rgba(168,155,142,0.95)" font-family="Geist Mono,monospace"
+              font-size="8.5" font-weight="600" letter-spacing="1">IDLE</text>
       </g>
 
-      <!-- ── W5 ── (dimmed, idle) -->
-      <g transform="translate(918 122)">
-        <rect width="120" height="120" rx="6"
-              fill="rgba(24,20,14,0.97)" stroke="rgba(109,160,191,0.12)" stroke-width="1.5"/>
-        <rect x="0" y="0" width="120" height="3" rx="6" fill="rgba(109,160,191,0.12)"/>
-        <text x="60" y="52" text-anchor="middle"
-              fill="rgba(240,220,200,0.20)" font-family="Fraunces,serif"
-              font-size="38" font-weight="900" font-style="italic" letter-spacing="-2">W5</text>
-        <text x="60" y="74" text-anchor="middle"
-              fill="#524438" font-family="'JetBrains Mono',monospace"
-              font-size="8.5" font-weight="700" letter-spacing="2.5">DEPLOY</text>
-        <text x="60" y="96" text-anchor="middle"
-              fill="#524438" font-family="'JetBrains Mono',monospace"
-              font-size="8.5" letter-spacing="1.5">IDLE</text>
+      <!-- ── W5 IDLE ── -->
+      <g transform="translate(918 134)">
+        <rect width="130" height="132" rx="8"
+              fill="#faf6f1" stroke="rgba(26,22,20,0.08)" stroke-width="1"/>
+        <rect x="0" y="0" width="130" height="3" rx="8" fill="rgba(26,22,20,0.08)"/>
+        <text x="14" y="44"
+              fill="rgba(26,22,20,0.22)" font-family="Instrument Serif,serif"
+              font-size="44" font-weight="400" font-style="italic" letter-spacing="-2">W5</text>
+        <text x="14" y="74"
+              fill="rgba(168,155,142,0.7)" font-family="Geist Mono,monospace"
+              font-size="9" font-weight="600" letter-spacing="1.6">DEPLOY</text>
+        <rect x="14" y="92" width="40" height="20" rx="3"
+              fill="rgba(168,155,142,0.08)" stroke="rgba(168,155,142,0.22)"/>
+        <text x="34" y="106" text-anchor="middle"
+              fill="rgba(168,155,142,0.85)" font-family="Geist Mono,monospace"
+              font-size="8.5" font-weight="600" letter-spacing="1">IDLE</text>
       </g>
 
-      <!-- CLEAN packet -->
-      <circle class="pkt-clean" r="9" fill="#d07348" filter="url(#glow0)"/>
-
-      <!-- BAD packet — blocked at W3 -->
-      <circle class="pkt-bad" r="11" fill="#c75050" filter="url(#glow1)"/>
+      <!-- packets flowing -->
+      <circle class="pkt-clean" r="8" fill="#c96442" filter="url(#glow0)"/>
+      <circle class="pkt-bad" r="10" fill="#b85c52" filter="url(#glow1)"/>
 
       <!-- Oversight scanner -->
-      <g transform="translate(538 292)">
-        <circle r="54" fill="url(#scanGrad)"/>
-        <circle class="scan-ring" r="54" fill="none" stroke="#d07348" stroke-width="1.5"/>
-        <text x="0" y="-4" text-anchor="middle"
-              fill="#d07348" font-family="'JetBrains Mono',monospace"
-              font-size="10.5" font-weight="700" letter-spacing="3">OVERSIGHT</text>
-        <text x="0" y="14" text-anchor="middle"
-              fill="rgba(208,115,72,0.55)" font-family="'JetBrains Mono',monospace"
-              font-size="8.5">DEEP_INSPECT</text>
+      <g transform="translate(543 320)">
+        <circle r="60" fill="url(#scanGrad)"/>
+        <circle class="scan-ring" r="58" fill="none" stroke="#c96442" stroke-width="1.4"/>
+        <circle r="34" fill="#ffffff" stroke="rgba(201,100,66,0.4)" stroke-width="1"/>
+        <text x="0" y="-3" text-anchor="middle"
+              fill="#c96442" font-family="Geist Mono,monospace"
+              font-size="10" font-weight="600" letter-spacing="2.4">OVERSIGHT</text>
+        <text x="0" y="13" text-anchor="middle"
+              fill="rgba(201,100,66,0.7)" font-family="Geist Mono,monospace"
+              font-size="8" letter-spacing="0.5">DEEP_INSPECT</text>
       </g>
-      <line x1="538" y1="238" x2="538" y2="262"
-            stroke="#d07348" stroke-width="2" stroke-opacity="0.5"
-            stroke-dasharray="4 5" class="scan-ring"/>
+      <line x1="543" y1="266" x2="543" y2="290"
+            stroke="#c96442" stroke-width="1.8" stroke-opacity="0.55"
+            stroke-dasharray="3 4" class="scan-ring"/>
 
       <!-- Reward reveal badge -->
-      <g class="pop-reveal" transform="translate(606 50)">
-        <rect x="0" y="0" width="250" height="58" rx="6"
-              fill="rgba(208,115,72,0.12)" stroke="#d07348" stroke-width="1.5"/>
-        <text x="16" y="23" fill="#d07348"
-              font-family="'JetBrains Mono',monospace"
-              font-size="11.5" font-weight="700" letter-spacing="2">+2.5 REWARD</text>
-        <text x="16" y="43" fill="rgba(208,115,72,0.65)"
-              font-family="'JetBrains Mono',monospace" font-size="10">
+      <g class="pop-reveal" transform="translate(610 56)">
+        <rect x="0" y="0" width="270" height="62" rx="8"
+              fill="rgba(201,100,66,0.10)" stroke="rgba(201,100,66,0.45)" stroke-width="1"/>
+        <text x="18" y="26" fill="#c96442"
+              font-family="Instrument Serif,serif"
+              font-size="22" font-weight="400" font-style="italic">+2.5 reward</text>
+        <text x="18" y="48" fill="rgba(107,93,82,0.9)"
+              font-family="Geist Mono,monospace" font-size="9.5" letter-spacing="0.4">
           deception caught via DEEP_INSPECT
         </text>
       </g>
 
       <!-- Under-node labels -->
-      <text x="98"  y="260" text-anchor="middle" fill="rgba(109,160,191,0.42)"
-            font-family="'JetBrains Mono',monospace" font-size="8.5" letter-spacing="2">CLEAN</text>
-      <text x="318" y="260" text-anchor="middle" fill="rgba(109,160,191,0.42)"
-            font-family="'JetBrains Mono',monospace" font-size="8.5" letter-spacing="2">CLEAN</text>
-      <text x="538" y="260" text-anchor="middle" fill="#c75050"
-            font-family="'JetBrains Mono',monospace" font-size="8.5"
-            font-weight="700" letter-spacing="2">DECEPTIVE ↑</text>
-      <text x="758" y="260" text-anchor="middle" fill="#524438"
-            font-family="'JetBrains Mono',monospace" font-size="8.5" letter-spacing="2">IDLE</text>
-      <text x="978" y="260" text-anchor="middle" fill="#524438"
-            font-family="'JetBrains Mono',monospace" font-size="8.5" letter-spacing="2">IDLE</text>
+      <text x="103" y="288" text-anchor="middle" fill="rgba(91,135,105,0.85)"
+            font-family="Geist Mono,monospace" font-size="9" font-weight="600" letter-spacing="2">CLEAN</text>
+      <text x="323" y="288" text-anchor="middle" fill="rgba(91,135,105,0.85)"
+            font-family="Geist Mono,monospace" font-size="9" font-weight="600" letter-spacing="2">CLEAN</text>
+      <text x="543" y="305" text-anchor="middle" fill="#b85c52"
+            font-family="Geist Mono,monospace" font-size="9.5"
+            font-weight="700" letter-spacing="1.8">DECEPTIVE ↓</text>
+      <text x="763" y="288" text-anchor="middle" fill="rgba(168,155,142,0.85)"
+            font-family="Geist Mono,monospace" font-size="9" letter-spacing="2">IDLE</text>
+      <text x="983" y="288" text-anchor="middle" fill="rgba(168,155,142,0.85)"
+            font-family="Geist Mono,monospace" font-size="9" letter-spacing="2">IDLE</text>
     </svg>
   </div>
 </div>
@@ -932,11 +1066,11 @@ def how_html() -> str:
         for i, (t, c) in enumerate(steps, 1)
     )
     return f"""
-<div class="oa-section-rule"></div>
 <div class="oa-section">
-  <div style="display:flex;align-items:baseline;gap:18px;margin-bottom:20px;">
-    <span class="oa-section-title">How it works</span>
-    <span class="oa-section-copy">Five steps. No prior knowledge needed.</span>
+  <div class="oa-section-head">
+    <span class="oa-section-num">01 — How it works</span>
+    <span class="oa-section-title">Five steps. No prior knowledge needed.</span>
+    <span class="oa-section-copy">A guided flow from launch to verdict — designed so any judge can run a complete episode in under a minute.</span>
   </div>
   <div class="oa-steps">{cards}</div>
 </div>
@@ -1060,11 +1194,11 @@ def _pipe_bar_svg(env: OversightArenaEnvironment | None, show_real: bool) -> str
         bad_ids = {int(k) for k in state.get("failure_plan", {}).keys()}
 
     STATE_COLOR = {
-        "IDLE":      "#524438",
-        "WAITING":   "#524438",
-        "WORKING":   "#6da0bf",
-        "COMPLETED": "#d07348",
-        "APPROVED":  "#c4924a",
+        "IDLE":      "#a89b8e",
+        "WAITING":   "#a89b8e",
+        "WORKING":   "#6b8aa8",
+        "COMPLETED": "#5b8769",
+        "APPROVED":  "#c79552",
         "REDIRECTED":"#a07dd4",
     }
     xs  = [110, 298, 486, 674, 862]
@@ -1077,51 +1211,55 @@ def _pipe_bar_svg(env: OversightArenaEnvironment | None, show_real: bool) -> str
         real = w.get("real_state_str") or w.get("state", "IDLE")
         x = xs[idx]
 
-        color = STATE_COLOR.get(vis, "#524438")
+        color = STATE_COLOR.get(vis, "#a89b8e")
         if deep and real in FAILURE_STATES:
-            color = "#c75050"
+            color = "#b85c52"
         elif unch >= 2 and vis == "WORKING":
-            color = "#c4924a"
+            color = "#c79552"
         if show_real and wid in bad_ids:
-            color = "#c75050"
+            color = "#b85c52"
 
         nodes.append(f"""
-        <g transform="translate({x - 54} 32)">
-          <rect width="108" height="88" rx="6"
-                fill="rgba(24,20,14,0.96)" stroke="{color}" stroke-width="1.5"/>
-          <rect x="0" y="0" width="108" height="3" rx="6" fill="{color}"/>
-          <circle cx="90" cy="18" r="5" fill="{color}" opacity="0.9"/>
-          <text x="54" y="40" text-anchor="middle"
-                fill="#f0e6da" font-family="Fraunces,serif"
-                font-size="28" font-weight="900" font-style="italic" letter-spacing="-1.5">W{wid}</text>
-          <text x="54" y="58" text-anchor="middle"
-                fill="{color}" font-family="'JetBrains Mono',monospace"
-                font-size="7.5" font-weight="700" letter-spacing="2">{_esc(vis)}</text>
-          <text x="54" y="74" text-anchor="middle"
-                fill="#524438" font-family="'JetBrains Mono',monospace"
-                font-size="7">Δ={unch}</text>
+        <g transform="translate({x - 54} 30)">
+          <rect width="108" height="92" rx="8"
+                fill="#ffffff" stroke="{color}" stroke-width="1"/>
+          <rect x="0" y="0" width="108" height="3" rx="8" fill="{color}"/>
+          <circle cx="90" cy="18" r="4" fill="{color}" opacity="0.85"/>
+          <text x="12" y="44"
+                fill="#1a1614" font-family="Instrument Serif,serif"
+                font-size="32" font-weight="400" font-style="italic" letter-spacing="-1.5">W{wid}</text>
+          <text x="12" y="62"
+                fill="{color}" font-family="Geist Mono,monospace"
+                font-size="8" font-weight="600" letter-spacing="1.4">{_esc(vis)}</text>
+          <text x="12" y="78"
+                fill="#a89b8e" font-family="Geist Mono,monospace"
+                font-size="7.5" letter-spacing="0.5">Δ={unch}</text>
         </g>""")
 
     return f"""<div class="oa-pipe-bar">
   <svg viewBox="0 0 980 156" role="img" aria-label="Live oversight pipeline">
     <defs>
       <filter id="pbGlow">
-        <feGaussianBlur stdDeviation="4" result="b"/>
+        <feGaussianBlur stdDeviation="3" result="b"/>
         <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
       </filter>
+      <pattern id="pbDots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+        <circle cx="20" cy="20" r="1" fill="rgba(26,22,20,0.06)"/>
+      </pattern>
     </defs>
-    <rect width="980" height="156" fill="rgba(16,13,10,0.95)"/>
+    <rect width="980" height="156" fill="#faf6f1"/>
+    <rect width="980" height="156" fill="url(#pbDots)"/>
     <line x1="56" y1="76" x2="924" y2="76"
-          stroke="rgba(208,115,72,0.1)" stroke-width="6" stroke-linecap="round"/>
+          stroke="rgba(26,22,20,0.10)" stroke-width="5" stroke-linecap="round"/>
     <line class="dash-flow" x1="56" y1="76" x2="924" y2="76"
-          stroke="#6da0bf" stroke-opacity="0.45" stroke-width="2" fill="none"
+          stroke="#c96442" stroke-opacity="0.6" stroke-width="1.6" fill="none"
           stroke-dasharray="10 13"/>
-    <circle r="7" fill="#d07348" filter="url(#pbGlow)"
+    <circle r="6" fill="#c96442" filter="url(#pbGlow)"
             style="offset-path:path('M56 76 L924 76'); animation:flowPkt 3.2s linear infinite;"/>
     {''.join(nodes)}
-    <text x="940" y="70" fill="rgba(208,115,72,0.5)"
-          font-family="'JetBrains Mono',monospace" font-size="9"
-          font-weight="700" letter-spacing="1.5">{_esc(step_txt)}</text>
+    <text x="924" y="142" text-anchor="end" fill="#a89b8e"
+          font-family="Geist Mono,monospace" font-size="9"
+          font-weight="500" letter-spacing="1.6">{_esc(step_txt)}</text>
   </svg>
 </div>"""
 
@@ -1140,7 +1278,11 @@ def pipeline_html(env: OversightArenaEnvironment | None, show_real: bool = False
             for i in range(1, 6)
         )
         return f"""<div class="oa-section">
-  <div class="oa-section-title" style="margin-bottom:16px;">Live Agent Pipeline</div>
+  <div class="oa-section-head">
+    <span class="oa-section-num">02 — Live pipeline</span>
+    <span class="oa-section-title">Five workers, one will lie.</span>
+    <span class="oa-section-copy">Idle. Start a simulation to load a deterministic, seeded task chain.</span>
+  </div>
   {bar}
   <div class="oa-nodes">{idle_cards}</div>
 </div>"""
@@ -1157,8 +1299,9 @@ def pipeline_html(env: OversightArenaEnvironment | None, show_real: bool = False
         "Post-mortem — ground truth revealed. Red border = worker was compromised by the seeded failure plan."
     )
     return f"""<div class="oa-section">
-  <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:16px;">
-    <span class="oa-section-title">Live Agent Pipeline</span>
+  <div class="oa-section-head">
+    <span class="oa-section-num">02 — Live pipeline</span>
+    <span class="oa-section-title">Five workers, one will lie.</span>
     <span class="oa-section-copy">{_esc(legend)}</span>
   </div>
   {bar}
@@ -1186,22 +1329,22 @@ def reward_html(
           <span class="oa-rcard-val {vc}">{v:+.2f}</span>
         </div>""")
 
-    total_color = "var(--sig)" if total >= 0 else "var(--bad)"
-    step_color  = "var(--sig)" if (step_reward or 0) >= 0 else "var(--bad)"
+    total_color = "var(--sage)" if total >= 0 else "var(--crimson)"
+    step_color  = "var(--sage)" if (step_reward or 0) >= 0 else "var(--crimson)"
     step_note   = "" if step_reward is None else (
-        f'<span style="color:{step_color}; font-size:11px;">last step {step_reward:+.3f}</span>'
+        f'<span style="color:{step_color}; font-size:11px; font-family:var(--mono);">last step {step_reward:+.3f}</span>'
     )
     return f"""<div class="oa-console">
   <div class="oa-console-hdr">
     <div class="oa-dot"></div>
     Reward Signal
-    <span style="margin-left:auto;font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-0.04em;color:{total_color};">{total:+.3f}</span>
+    <span style="margin-left:auto;font-family:var(--display);font-size:30px;font-weight:400;font-style:italic;letter-spacing:-0.03em;color:{total_color};">{total:+.3f}</span>
   </div>
-  <div style="padding:10px 16px 4px;display:flex;gap:12px;align-items:center;">
+  <div style="padding:12px 18px 4px;display:flex;gap:12px;align-items:center;">
     <span class="oa-tag">{_esc(episode_result)}</span>
     {step_note}
   </div>
-  <div class="oa-reward-grid" style="margin:8px 16px 16px;">{" ".join(cards)}</div>
+  <div class="oa-reward-grid" style="margin:10px 18px 18px;">{" ".join(cards)}</div>
 </div>"""
 
 
@@ -1217,7 +1360,7 @@ def log_html(log: list[dict[str, Any]] | None) -> str:
         if e.get("kind") == "reset":
             rows.append(f"""<div class="oa-log-row" style="color:var(--muted);">
               <span class="oa-log-n">—</span>
-              <span class="oa-log-a" style="color:var(--sig);">NEW EPISODE · {_esc(e.get("difficulty","?"))} · seed={_esc(e.get("seed","?"))}</span>
+              <span class="oa-log-a" style="color:var(--orange); font-family:var(--mono); letter-spacing:0.06em;">NEW EPISODE · {_esc(e.get("difficulty","?"))} · seed={_esc(e.get("seed","?"))}</span>
               <span></span>
             </div>""")
             continue
@@ -1280,9 +1423,10 @@ def postmortem_html(state: dict[str, Any]) -> str:
 
     return f"""<div class="oa-pm">
   <div class="oa-pm-hdr">
-    <div>
-      <div class="oa-pm-title">Post-mortem</div>
-      <div class="oa-section-copy">{_esc(explanation)}</div>
+    <div style="max-width:640px;">
+      <div style="font-family:var(--mono); font-size:11px; letter-spacing:0.18em; color:var(--orange); text-transform:uppercase; margin-bottom:8px;">03 — Verdict</div>
+      <div class="oa-pm-title">Post-mortem.</div>
+      <div style="font-size:14px; color:var(--muted); line-height:1.6; margin-top:10px; max-width:560px;">{_esc(explanation)}</div>
     </div>
     <span class="oa-verdict {verdict_cls}">{_esc(result)} &nbsp; {total:+.3f}</span>
   </div>
@@ -1295,8 +1439,8 @@ def postmortem_html(state: dict[str, Any]) -> str:
       <tbody>{"".join(trs)}</tbody>
     </table>
     <div class="oa-pm-side">
-      <div class="oa-section-title" style="margin-bottom:12px;">Why it matters</div>
-      <div class="oa-section-copy" style="margin-bottom:16px;">
+      <div style="font-family:var(--display); font-size:24px; font-style:italic; color:var(--ink); margin-bottom:12px; letter-spacing:-0.02em;">Why it matters</div>
+      <div style="font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:18px;">
         Deceptive workers look safe until the supervisor commits budget to inspect.
         Colluding pairs defeat per-agent checks entirely — cross-fleet reasoning required.
       </div>
@@ -1415,14 +1559,16 @@ with gr.Blocks(title="Oversight Arena") as demo:
     gr.HTML(how_html())
 
     # ── controls row ────────────────────────────────────────────────────────
-    gr.HTML('<div class="oa-section-rule"></div>')
+    gr.HTML("""<div class="oa-section" style="padding-bottom:24px;">
+      <div class="oa-section-head">
+        <span class="oa-section-num">02 — Run it</span>
+        <span class="oa-section-title">Pick a scenario. Hit start.</span>
+        <span class="oa-section-copy">Each run is deterministic and reproducible — same seed, same outcome. Use the oracle button to auto-step a perfect supervisor.</span>
+      </div>
+    </div>""")
     with gr.Row(equal_height=False):
         with gr.Column(scale=5):
-            gr.HTML("""<div class="oa-section" style="padding-bottom:12px;">
-              <div class="oa-console-hdr" style="margin-bottom:16px;">
-                <div class="oa-dot"></div>
-                Simulation controls
-              </div>""")
+            gr.HTML('<div class="oa-section" style="padding-top:0; padding-bottom:12px;">')
             with gr.Row():
                 scenario_radio = gr.Radio(
                     choices=[
@@ -1458,7 +1604,13 @@ with gr.Blocks(title="Oversight Arena") as demo:
     pipeline_display = gr.HTML(pipeline_html(None))
 
     # ── observation + action console ─────────────────────────────────────────
-    gr.HTML('<div class="oa-section-rule"></div>')
+    gr.HTML("""<div class="oa-section" style="padding-bottom:18px;">
+      <div class="oa-section-head">
+        <span class="oa-section-num">04 — Console</span>
+        <span class="oa-section-title">Observe. Inspect. Decide.</span>
+        <span class="oa-section-copy">Every action you submit is real — it goes through env.step() and updates the live state on the left.</span>
+      </div>
+    </div>""")
     with gr.Row():
         with gr.Column(scale=3):
             observation_box = gr.Textbox(
@@ -1493,7 +1645,13 @@ with gr.Blocks(title="Oversight Arena") as demo:
             step_btn = gr.Button("▶  Submit Action", variant="primary")
 
     # ── log + rewards ────────────────────────────────────────────────────────
-    gr.HTML('<div class="oa-section-rule"></div>')
+    gr.HTML("""<div class="oa-section" style="padding-bottom:18px;">
+      <div class="oa-section-head">
+        <span class="oa-section-num">05 — Telemetry</span>
+        <span class="oa-section-title">Audit trail &amp; reward signal.</span>
+        <span class="oa-section-copy">Nine independent reward components, gated by an episode multiplier. The supervisor only earns full credit when the seeded failure plan is perfectly resolved.</span>
+      </div>
+    </div>""")
     with gr.Row():
         with gr.Column(scale=3):
             episode_log_display = gr.HTML(log_html([]))

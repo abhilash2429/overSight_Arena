@@ -30,13 +30,20 @@ logs/
 .ipynb_checkpoints/
 
 # Training artifacts
-reward_curves.png
+# NOTE: we DO want to commit reward curves (under assets/plots/) so reviewers
+# can see them without re-running training. The merged model weights are
+# intentionally NOT committed (size) and NOT shipped in the Space image
+# (see .dockerignore). They are regenerated locally by the training notebook.
 oversight-arena-grpo/
 oversight-arena-trained/
 wandb/
 runs/
 outputs/
 checkpoints/
+training/oversight-arena-trained/
+training/oversight-arena-grpo/
+training_log_snapshot.json
+training/training_log_snapshot.json
 
 # Build and packaging
 build/

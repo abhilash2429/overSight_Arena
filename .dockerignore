@@ -1,0 +1,80 @@
+# =============================================================================
+# .dockerignore
+#
+# Goal: keep the Hugging Face Space image as small as possible so judges can
+# pull and run it locally quickly. The Dockerfile does `COPY . .`, so
+# everything in this file is excluded from the build context.
+#
+# In particular, we exclude:
+#   - GRPO trained model weights (multi-GB; reviewers don't need them to test
+#     the environment / UI / OpenEnv server).
+#   - The training notebook + its outputs (the Space serves the env, not training).
+#   - Local eval result JSONs (regenerable; bulky).
+#   - Caches, virtualenvs, build artifacts, OS junk.
+# =============================================================================
+
+# Trained model weights (intentionally NOT shipped — keep Space lean)
+oversight-arena-trained/
+oversight-arena-grpo/
+training/oversight-arena-trained/
+training/oversight-arena-grpo/
+**/checkpoint-*/
+**/*.safetensors
+**/pytorch_model.bin
+
+# Training notebook + its run-time outputs
+training/.ipynb_checkpoints/
+training/training_log_snapshot.json
+training/grpo_episodes_*.jsonl
+training/grpo_training.log
+training/eval/results/
+training/plots/
+training/oversight-arena-grpo/
+training_log_snapshot.json
+grpo_episodes_*.jsonl
+reward_curves.png
+
+# Eval result JSONs are regenerable and not needed to run the Space
+eval/results/*.json
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Secrets / env files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+*.out
+*.err
+logs/
+
+# Notebook checkpoints anywhere
+**/.ipynb_checkpoints/
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+
+# OS / editor metadata
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.git/
+.gitignore
+docs/
